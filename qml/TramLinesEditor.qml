@@ -42,7 +42,7 @@ Item {
             spacing: 25  * theme.scaleWidth
             height: children.height
             Comp.IconButtonTransparent{
-                icon.source: prefix + "/images/SnapLeftHalf.png"
+                icon.source: "../../images/SnapLeftHalf.png"
             }
             Text{
                 text: "2.00 m"
@@ -52,7 +52,7 @@ Item {
             }
 
             Comp.IconButtonTransparent{
-                icon.source: prefix + "/images/SnapRightHalf.png"
+                icon.source: "../../images/SnapRightHalf.png"
             }
         }
         Row{
@@ -64,7 +64,7 @@ Item {
             spacing: 25  * theme.scaleWidth
             height: children.height
             Comp.IconButtonTransparent{
-                icon.source: prefix + "/images/ArrowLeft.png"
+                icon.source: "../../images/ArrowLeft.png"
             }
             Text{
                 text: "10 cm"
@@ -74,7 +74,7 @@ Item {
             }
 
             Comp.IconButtonTransparent{
-                icon.source: prefix + "/images/ArrowRight.png"
+                icon.source: "../../images/ArrowRight.png"
             }
         }
         Row{
@@ -87,7 +87,7 @@ Item {
             height: children.height
 			Comp.IconButtonTransparent{
 				id: tramSwapAB
-				icon.source: prefix + "/images/ABSwapPoints.png"
+				icon.source: "../../images/ABSwapPoints.png"
 			}
 			Text {
 				text: qsTr("Mode")
@@ -96,7 +96,7 @@ Item {
 			}
 			Comp.IconButtonTransparent{
 				id: tramSwapMode
-				icon.source: prefix + "/images/TramLines.png"
+				icon.source: "../../images/TramLines.png"
 			}
         }
         Row{
@@ -108,7 +108,7 @@ Item {
             spacing: 25  * theme.scaleWidth
             Comp.IconButtonTransparent{
                 id: tramPassesDown
-                icon.source: prefix + "/images/DnArrow64.png"
+                icon.source: "../../images/DnArrow64.png"
             }
             Comp.SpinBoxCustomized{
                 id: passesRow
@@ -120,7 +120,7 @@ Item {
                 to: 999
             }
             Comp.IconButtonTransparent{
-                icon.source: prefix + "/images/UpArrow64.png"
+                icon.source: "../../images/UpArrow64.png"
             }
         }
 
@@ -129,7 +129,7 @@ Item {
             anchors.leftMargin: 10  * theme.scaleWidth
             anchors.bottom: parent.bottom
             anchors.bottomMargin: 10  * theme.scaleHeight
-            icon.source: prefix + "/images/SwitchOff.png"
+            icon.source: "../../images/SwitchOff.png"
             onClicked: tramLinesEditor.visible = false
         }
         Comp.IconButtonTransparent{
@@ -137,7 +137,7 @@ Item {
             anchors.rightMargin: 10  * theme.scaleWidth
             anchors.bottom: parent.bottom
             anchors.bottomMargin: 10  * theme.scaleHeight
-            icon.source: prefix + "/images/VehFileSave.png"
+            icon.source: "../../images/VehFileSave.png"
         }
         Column{
             anchors.horizontalCenter: parent.horizontalCenter

@@ -226,7 +226,7 @@ Rectangle{
         anchors.bottom: parent.bottom
         anchors.left: parent.left
         anchors.margins: 20
-        icon.source: prefix + "/images/back-button.png"
+        icon.source: "../../images/back-button.png"
         onClicked: {
             pin1.currentIndex = 0
             pin2.currentIndex = 0
@@ -261,7 +261,7 @@ Rectangle{
 		anchors.bottomMargin: 20 * theme.scaleHeight
 		anchors.rightMargin: 20 * theme.scaleHeight
 		anchors.leftMargin: 20 * theme.scaleHeight
-        icon.source: prefix + "/images/UpArrow64.png"
+        icon.source: "../../images/UpArrow64.png"
         onClicked: load_settings()
     }
     IconButtonTransparent{
@@ -272,7 +272,7 @@ Rectangle{
 		anchors.rightMargin: 20 * theme.scaleHeight
 		anchors.leftMargin: 20 * theme.scaleHeight
         anchors.bottom: parent.bottom
-        icon.source: prefix + "/images/ToolAcceptChange.png"
+        icon.source: "../../images/ToolAcceptChange.png"
         Text{
             anchors.verticalCenter: parent.verticalCenter
             anchors.right: parent.left
@@ -288,7 +288,7 @@ Rectangle{
         anchors.verticalCenter: btnPinsSave.verticalCenter
         anchors.rightMargin: 20 * theme.scaleWidth
         visible: false
-        source: prefix + "/images/Config/ConSt_Mandatory.png"
+        source: "../../images/Config/ConSt_Mandatory.png"
         height: back.width
     }
 }

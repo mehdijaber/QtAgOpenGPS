@@ -10,6 +10,7 @@
 #include "aogproperty.h"
 #include <QProcess>
 #include <QSysInfo>
+#include <QDebug> // For debug messages
 
 QLabel *grnPixelsWindow;
 AOGSettings *settings;
@@ -37,6 +38,30 @@ int main(int argc, char *argv[])
     qRegisterMetaTypeStreamOperators<QList<int> >("QList<int>");
     qRegisterMetaTypeStreamOperators<QVector<int> >("QVector<int>");
 #endif
+
+    // Debug message to indicate the QML loading mode
+    #ifdef LOCAL_QML
+        qDebug() << "Using local QML files for development.";
+    #else
+        qDebug() << "Using compiled QML resources.";
+    #endif
+
+    // Initialize QML engine
+    QQmlApplicationEngine engine;
+
+
+    // Load the main QML file based on the mode (local or compiled)
+    #ifdef LOCAL_QML
+        engine.load(QUrl::fromLocalFile("../qml/MainWindow.qml")); // Load local QML file
+    #else
+        engine.load(QUrl(QStringLiteral("qrc:/qml/MainWindow.qml"))); // Load compiled QML resource
+    #endif
+
+    // Ensure the QML file was loaded correctly
+    if (engine.rootObjects().isEmpty())
+        return -1;
+
+    // Initialize application settings
     QQuickWindow::setGraphicsApi(QSGRendererInterface::OpenGL);
     settings = new AOGSettings();
     AOGProperty::init_defaults();

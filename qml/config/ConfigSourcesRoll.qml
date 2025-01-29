@@ -23,7 +23,7 @@ Rectangle{
         anchors.left: parent.left
         anchors.leftMargin: 20 * theme.scaleWidth
         text: qsTr("Remove Offset")
-        icon.source: prefix + "/images/Config/ConDa_RemoveOffset.png"
+        icon.source: "../../images/Config/ConDa_RemoveOffset.png"
         onClicked: {
             settings.setIMU_rollZero = 0
         }
@@ -34,7 +34,7 @@ Rectangle{
         anchors.verticalCenter: parent.verticalCenter
         anchors.left: parent.left
         anchors.leftMargin: 20 * theme.scaleWidth
-        icon.source: prefix + "/images/Config/ConDa_RollSetZero.png"
+        icon.source: "../../images/Config/ConDa_RollSetZero.png"
         isChecked: false
         onClicked: {
             if (aog.imuRollDegrees != 88888) {
@@ -59,7 +59,7 @@ Rectangle{
         anchors.verticalCenter: zeroRollBtn.verticalCenter
         anchors.leftMargin: 20 * theme.scaleWidth
 
-        icon.source: prefix + "/images/UpArrow64.png"
+        icon.source: "../../images/UpArrow64.png"
         onClicked: settings.setIMU_rollZero += 0.1
     }
 
@@ -69,7 +69,7 @@ Rectangle{
         anchors.verticalCenter: zeroRollBtn.verticalCenter
         anchors.leftMargin: 5 * theme.scaleWidth
 
-        icon.source: prefix + "/images/DnArrow64.png"
+        icon.source: "../../images/DnArrow64.png"
         onClicked: settings.setIMU_rollZero -= 0.1
     }
 
@@ -78,7 +78,7 @@ Rectangle{
         anchors.left: parent.horizontalCenter
         anchors.top: parent.top
         anchors.topMargin: 20 * theme.scaleHeight
-        icon.source: prefix + "/images/Config/ConDa_ResetIMU.png"
+        icon.source: "../../images/Config/ConDa_ResetIMU.png"
         isChecked: false
         onClicked: {
             aog.changeImuHeading(88888);
@@ -92,7 +92,7 @@ Rectangle{
         anchors.left: parent.horizontalCenter
         anchors.topMargin: 20 * theme.scaleHeight
         text: qsTr("Invert Roll")
-        icon.source: prefix + "/images/Config/ConDa_InvertRoll.png"
+        icon.source: "../../images/Config/ConDa_InvertRoll.png"
         checkable: true
         checked: settings.setIMU_invertRoll
         onCheckedChanged: settings.setIMU_invertRoll = checked
@@ -120,7 +120,7 @@ Rectangle{
         }
     }
     Image {
-        source: prefix + "/images/Config/ConD_RollHelper.png"
+        source: "../../images/Config/ConD_RollHelper.png"
         anchors.right: parent.right
         anchors.rightMargin: 50 * theme.scaleWidth
         width: 150 * theme.scaleWidth

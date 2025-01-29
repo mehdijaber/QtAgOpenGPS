@@ -5,7 +5,7 @@ import "components" as Comp
 
 Window {
 
-    property string imagePath: prefix + "/images/"
+    property string imagePath: "images/"
 
     AgIOTheme {
         id: theme
@@ -120,7 +120,7 @@ Window {
                 onClicked: ethernetConfig.visible = !ethernetConfig.visible
             }
             Comp.IconButtonTransparent {
-                icon.source: prefix + "/images/Nmea.png"
+                icon.source: "images/Nmea.png"
                 width: btnEthernetStatus.width
                 height: btnEthernetStatus.height
                 visible: true

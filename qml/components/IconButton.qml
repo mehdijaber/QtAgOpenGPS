@@ -6,8 +6,6 @@ import QtQuick
 import QtQuick.Controls.Fusion
 import QtQuick.Effects
 
-import ".."
-import "../components"
 
 Button {
     implicitWidth: 70 * theme.scaleWidth
@@ -76,6 +74,8 @@ Button {
     }
 
     property int radius: 10
+    width: 70
+    height: 70
     onRadiusChanged: {
         icon_button_background.radius = radius
     }

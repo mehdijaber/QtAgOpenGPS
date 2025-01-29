@@ -41,27 +41,27 @@ Drawer {
                 Layout.fillWidth: true
                 isChecked: false
                 text: "Drive In"
-                icon.source: prefix + "/images/AutoManualIsAuto.png"
+                icon.source: "../../images/AutoManualIsAuto.png"
                 onClicked: { fieldMenu.visible = false ; fieldOpen.sortBy = 2 ; fieldOpen.visible = true; }
             }
             IconButtonTextBeside{
                 objectName: "btnFieldISOXML"
                 isChecked: false
                 text: "ISO-XML"
-                icon.source: prefix + "/images/ISOXML.png"
+                icon.source: "../../images/ISOXML.png"
             }
             IconButtonTextBeside{
                 objectName: "btnFieldFromKML"
                 isChecked: false
                 text: "From KML"
-                icon.source: prefix + "/images/BoundaryLoadFromGE.png"
+                icon.source: "../../images/BoundaryLoadFromGE.png"
                 onClicked: fieldFromKML.visible = true
             }
             IconButtonTextBeside{
                 objectName: "btnFieldFromExisting"
                 isChecked: false
                 text: "From Existing"
-                icon.source: prefix + "/images/FileExisting.png"
+                icon.source: "../../images/FileExisting.png"
                 onClicked: {
                     fieldMenu.visible = false
                     fieldFromExisting.visible = true
@@ -71,7 +71,7 @@ Drawer {
                 objectName: "New"
                 isChecked: false
                 text: "New"
-                icon.source: prefix + "/images/FileNew.png"
+                icon.source: "../../images/FileNew.png"
                 onClicked: {
                     fieldMenu.visible = false
                     fieldNew.visible = true
@@ -81,7 +81,7 @@ Drawer {
                 objectName: "btnFieldResume"
                 isChecked: false
                 text: "Resume"
-                icon.source: prefix + "/images/FilePrevious.png"
+                icon.source: "../../images/FilePrevious.png"
                 enabled: settings.setF_CurrentDir !== "Default" && !aog.isJobStarted
                 onEnabledChanged: fieldToResumeText.visible = enabled
 
@@ -104,7 +104,7 @@ Drawer {
                 objectName: "btnFieldClose"
                 isChecked: false
                 text: "Close"
-                icon.source: prefix + "/images/FileClose.png"
+                icon.source: "../../images/FileClose.png"
                 enabled: aog.isJobStarted
                 onClicked: {
                     fieldInterface.field_close()
@@ -116,7 +116,7 @@ Drawer {
                 objectName: "btnFieldOpen"
                 isChecked: false
                 text: "Open"
-                icon.source: prefix + "/images/FileOpen.png"
+                icon.source: "../../images/FileOpen.png"
                 onClicked: {
                     fieldMenu.visible = false
                     fieldOpen.visible = true;
@@ -133,7 +133,7 @@ Drawer {
             anchors.margins: 10
             anchors.leftMargin: 100
             id: fieldCancel
-            icon.source: prefix + "/images/Cancel64.png"
+            icon.source: "../../images/Cancel64.png"
             //buttonText: "Cancel"
             onClicked: fieldMenu.visible = false
             height: 75

@@ -57,25 +57,25 @@ Rectangle{
         Comp.IconButtonTransparent{
             height: parent.height
             width: 65 * theme.scaleWidth
-            icon.source: prefix + "/images/DnArrow64.png"
+            icon.source: "../../images/DnArrow64.png"
             onClicked: aog.sim_bump_speed(false)
         }
         Comp.IconButtonTransparent{
             height: parent.height
             width: 65 * theme.scaleWidth
-            icon.source: prefix + "/images/AutoStop.png"
+            icon.source: "../../images/AutoStop.png"
             onClicked: aog.sim_zero_speed()
         }
         Comp.IconButtonTransparent{
             height: parent.height
             width: 65 * theme.scaleWidth
-            icon.source: prefix + "/images/UpArrow64.png"
+            icon.source: "../../images/UpArrow64.png"
             onClicked: aog.sim_bump_speed(true)
         }
         Comp.IconButtonTransparent{
             height: parent.height
             width: 65 * theme.scaleWidth
-            icon.source: prefix + "/images/YouTurn80.png"
+            icon.source: "../../images/YouTurn80.png"
             onClicked: {
                 aog.sim_rotate()
                 aog.isBtnAutoSteerOn = false;

@@ -17,7 +17,7 @@ Item {
         anchors.fill: parent
         color: aog.backgroundColor
         Image {
-            source: prefix + "/images/Config/ConT_TramSpacing.png"
+            source: "../../images/Config/ConT_TramSpacing.png"
             id: imageTram
             anchors.right: parent.horizontalCenter
             anchors.top: parent.top
@@ -55,7 +55,7 @@ Item {
             anchors.bottomMargin: 100 * theme.scaleHeight
             width: 200 * theme.scaleWidth
             height: 200 * theme.scaleHeight
-            icon.source: prefix + "/images/Config/ConT_TramOverride.png"
+            icon.source: "../../images/Config/ConT_TramOverride.png"
         }
     }
 }

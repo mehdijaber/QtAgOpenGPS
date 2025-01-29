@@ -23,10 +23,10 @@ RadioDelegate {
         Image {
             id: trackType
 
-            source: (trackDelegate.mode === 2) ? prefix + "/images/TrackLine.png" :
-                    (trackDelegate.mode === 4) ? prefix + "/images/TrackCurve.png" :
-                    (trackDelegate.mode === 64) ? prefix + "/images/TrackPivot.png" :
-                                       prefix + "/images/HelpSmall.png"
+            source: (trackDelegate.mode === 2) ? "../../images/TrackLine.png" :
+                    (trackDelegate.mode === 4) ? "../../images/TrackCurve.png" :
+                    (trackDelegate.mode === 64) ? "../../images/TrackPivot.png" :
+                                       "../../images/HelpSmall.png"
         }
 
             Text {

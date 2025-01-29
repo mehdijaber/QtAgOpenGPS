@@ -74,7 +74,7 @@ Dialog {
                 }
                 MainConfigMainBtns{
                     id:vehicleMenu
-                    icon.source: prefix + "/images/Config/Con_VehicleMenu.png"
+                    icon.source: "../../images/Config/Con_VehicleMenu.png"
                 }
                 Column{
                     x: 25
@@ -93,20 +93,20 @@ Dialog {
 
                     MainConfigSecondaryBtns{
                         id: configTrSettings
-                        icon.source: prefix + "/images/Config/ConS_VehicleConfig.png"
+                        icon.source: "../../images/Config/ConS_VehicleConfig.png"
                     }
                     MainConfigSecondaryBtns{
                         id: configTrDim
-                        icon.source: prefix + "/images/Config/ConS_ImplementHitch.png"
+                        icon.source: "../../images/Config/ConS_ImplementHitch.png"
                     }
                     MainConfigSecondaryBtns{
                         id: btnconfigTrAntDim
-                        icon.source: prefix + "/images/Config/ConS_ImplementAntenna.png"
+                        icon.source: "../../images/Config/ConS_ImplementAntenna.png"
                     }
                 }
                 MainConfigMainBtns{
                     id:implementMenuBtn
-                    icon.source: prefix + "/images/Config/Con_ImplementMenu.png"
+                    icon.source: "../../images/Config/Con_ImplementMenu.png"
                 }
                 Column{
                     id: implementMenu
@@ -123,36 +123,36 @@ Dialog {
                     }
                     MainConfigSecondaryBtns{
                         id: configImpSettings
-                        icon.source: prefix + "/images/Config/ConS_VehicleConfig.png"
+                        icon.source: "../../images/Config/ConS_VehicleConfig.png"
                     }
                     MainConfigSecondaryBtns{
                         id: configImpDim
-                        icon.source: prefix + "/images/Config/ConS_ImplementHitch.png"
+                        icon.source: "../../images/Config/ConS_ImplementHitch.png"
                     }
                     MainConfigSecondaryBtns{
                         id: configImpAxle
-                        icon.source: prefix + "/images/Config/ConS_ImplementPivot.png"
+                        icon.source: "../../images/Config/ConS_ImplementPivot.png"
                     }
                     MainConfigSecondaryBtns{
                         id: configImpOffset
-                        icon.source: prefix + "/images/Config/ConS_ImplementOffset.png"
+                        icon.source: "../../images/Config/ConS_ImplementOffset.png"
                     }
                     MainConfigSecondaryBtns{
                         id: configImpSection
-                        icon.source: prefix + "/images/Config/ConS_ImplementSection.png"
+                        icon.source: "../../images/Config/ConS_ImplementSection.png"
                     }
                     MainConfigSecondaryBtns{
                         id: configImpTiming
-                        icon.source: prefix + "/images/Config/ConS_ImplementSettings.png"
+                        icon.source: "../../images/Config/ConS_ImplementSettings.png"
                     }
                     MainConfigSecondaryBtns{
                         id: configImpSwitches
-                        icon.source: prefix + "/images/Config/ConS_ImplementSwitch.png"
+                        icon.source: "../../images/Config/ConS_ImplementSwitch.png"
                     }
                 }
                 MainConfigMainBtns{
                     id:sourcesMenubtn
-                    icon.source: prefix + "/images/Config/Con_SourcesMenu.png"
+                    icon.source: "../../images/Config/Con_SourcesMenu.png"
                 }
                 ButtonGroup {
                     buttons: [ configsrcHeading, configsrcRoll ]
@@ -169,20 +169,20 @@ Dialog {
 
                     MainConfigSecondaryBtns{
                         id: configsrcHeading
-                        icon.source: prefix + "/images/Config/ConS_VehicleConfig.png"
+                        icon.source: "../../images/Config/ConS_VehicleConfig.png"
                     }
                     MainConfigSecondaryBtns{
                         id: configsrcRoll
-                        icon.source: prefix + "/images/Config/ConS_ImplementHitch.png"
+                        icon.source: "../../images/Config/ConS_ImplementHitch.png"
                     }
                 }
                 MainConfigMainBtns{
                     id:uTurnMenu
-                    icon.source: prefix + "/images/Config/Con_UTurnMenu.png"
+                    icon.source: "../../images/Config/Con_UTurnMenu.png"
                 }
                 MainConfigMainBtns{
                     id:modulesMenubtn
-                    icon.source: prefix + "/images/Config/Con_ModulesMenu.png"
+                    icon.source: "../../images/Config/Con_ModulesMenu.png"
                 }
                 ButtonGroup {
                     buttons: [ configModulesSettings, configModulesPinsbtn,  configBlockageMonbtn]
@@ -199,28 +199,28 @@ Dialog {
 
                     MainConfigSecondaryBtns{
                         id: configModulesSettings
-                        icon.source: prefix + "/images/Config/ConS_ModulesMachine.png"
+                        icon.source: "../../images/Config/ConS_ModulesMachine.png"
                     }
                     MainConfigSecondaryBtns{
                         id: configModulesPinsbtn
-                        icon.source: prefix + "/images/Config/ConS_ImplementSection.png"
+                        icon.source: "../../images/Config/ConS_ImplementSection.png"
                     }
                     MainConfigSecondaryBtns{
                         id: configBlockageMonbtn
-                        icon.source: prefix + "/images/Config/ConS_Blockage.png"
+                        icon.source: "../../images/Config/ConS_Blockage.png"
                     }
                 }
                 MainConfigMainBtns{
                     id:tramMenu
-                    icon.source: prefix + "/images/Config/Con_TramMenu.png"
+                    icon.source: "../../images/Config/Con_TramMenu.png"
                 }
                 MainConfigMainBtns{
                     id:displayMenu
-                    icon.source: prefix + "/images/Config/Con_Display.png"
+                    icon.source: "../../images/Config/Con_Display.png"
                 }
                 MainConfigMainBtns{
                     id:featureMenu
-                    icon.source: prefix + "/images/Config/Con_FeatureMenu.png"
+                    icon.source: "../../images/Config/Con_FeatureMenu.png"
                 }
             }
         }
@@ -257,7 +257,7 @@ Dialog {
                 anchors.right: parent.right
                 width:parent.height
                 height: parent.height
-                icon.source: prefix + "/images/OK64.png"
+                icon.source: "../../images/OK64.png"
                 onClicked: {
                     //closeAllConfig()
                     //fix up signs on implement dimensions

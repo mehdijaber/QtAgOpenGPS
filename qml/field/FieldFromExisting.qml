@@ -115,7 +115,7 @@ Dialog {
             anchors.left: editFieldName.right
             anchors.leftMargin: 5
             objectName: "btnBackSpace"
-            icon.source: prefix + "/images/BackSpace.png"
+            icon.source: "../../images/BackSpace.png"
             onClicked: newField.text = ""
             height: 50  * theme.scaleHeight
             width: 100  * theme.scaleWidth
@@ -134,7 +134,7 @@ Dialog {
             height: children.height
             IconButtonTransparent{
                 id: btnAddVehicleName
-                icon.source: prefix + "/images/Config/Con_VehicleMenu.png"
+                icon.source: "../../images/Config/Con_VehicleMenu.png"
                 Text{
                     anchors.right: parent.left
                     anchors.verticalCenter: parent.verticalCenter
@@ -146,7 +146,7 @@ Dialog {
             }
             IconButtonTransparent{
                 id: marker
-                icon.source: prefix + "/images/JobNameCalendar.png"
+                icon.source: "../../images/JobNameCalendar.png"
                 Text{
                     anchors.right: parent.left
                     anchors.verticalCenter: parent.verticalCenter
@@ -159,7 +159,7 @@ Dialog {
             }
             IconButtonTransparent{
                 id: btnAddTime
-                icon.source: prefix + "/images/JobNameTime.png"
+                icon.source: "../../images/JobNameTime.png"
                 Text{
                     anchors.right: parent.left
                     anchors.verticalCenter: parent.verticalCenter
@@ -176,7 +176,7 @@ Dialog {
                 checked: false
                 width: marker.width
                 height: marker.height
-                icon.source: prefix + "/images/FlagRed.png"
+                icon.source: "../../images/FlagRed.png"
                 text: "Flags"
             }
             IconButtonColor{
@@ -185,7 +185,7 @@ Dialog {
                 checked: false
                 width: marker.width
                 height: marker.height
-                icon.source: prefix + "/images/ManualOff.png"
+                icon.source: "../../images/ManualOff.png"
                 text: "Mapping"
             }
             IconButtonColor{
@@ -194,7 +194,7 @@ Dialog {
                 checked: true
                 width: marker.width
                 height: marker.height
-                icon.source: prefix + "/images/HeadlandMenu.png"
+                icon.source: "../../images/HeadlandMenu.png"
                 text: "Headland"
             }
             IconButtonColor{
@@ -203,7 +203,7 @@ Dialog {
                 checked: true
                 width: marker.width
                 height: marker.height
-                icon.source: prefix + "/images/ABLineEdit.png"
+                icon.source: "../../images/ABLineEdit.png"
                 text: "Lines"
             }
         }
@@ -222,11 +222,11 @@ Dialog {
                     existingField.text = ""
                     fieldView.clear_selection()
                 }
-                icon.source: prefix + "/images/Cancel64.png"
+                icon.source: "../../images/Cancel64.png"
             }
             IconButtonTransparent{
                 objectName: "btnSave"
-                icon.source: prefix + "/images/OK64.png"
+                icon.source: "../../images/OK64.png"
                 enabled: (newField.text !== "" && existingField.text !== "" &&
                           newField.text != existingField.text &&
                           errorMessage.visible === false)

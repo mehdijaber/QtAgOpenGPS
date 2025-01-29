@@ -35,7 +35,7 @@ import "wizards" as Wiz
 
             Comp.IconButtonTextBeside {
                 id: wizards
-                icon.source: prefix + "/images/WizardWand.png"
+                icon.source: "../../images/WizardWand.png"
                 text: qsTr("Wizards")
                 onClicked: wizardMenu.visible = !wizardMenu.visible
                 visible: false //todo later
@@ -43,7 +43,7 @@ import "wizards" as Wiz
 
             Comp.IconButtonTextBeside {
                 id: charts
-                icon.source: prefix + "/images/Chart.png"
+                icon.source: "../../images/Chart.png"
                 text: qsTr("Charts")
                 onClicked: chartsMenu.visible = !chartsMenu.visible
                 visible: true
@@ -51,14 +51,14 @@ import "wizards" as Wiz
 
             Comp.IconButtonTextBeside {
                 id: smABCurve
-                icon.source: prefix + "/images/ABSmooth.png"
+                icon.source: "../../images/ABSmooth.png"
                 text: qsTr("Smooth AB Curve")
                 visible: settings.setFeature_isABSmoothOn
             }
 
             Comp.IconButtonTextBeside {
                 id: delContourPaths
-                icon.source: prefix + "/images/TrashContourRef.png"
+                icon.source: "../../images/TrashContourRef.png"
                 width: 250
                 height: 50
                 text: qsTr("Delete Contour Paths")
@@ -67,7 +67,7 @@ import "wizards" as Wiz
 
             Comp.IconButtonTextBeside {
                 id: delAppliedArea
-                icon.source: prefix + "/images/TrashApplied.png"
+                icon.source: "../../images/TrashApplied.png"
                 width: 250
                 height: 50
                 text: qsTr("Delete Applied Area")
@@ -76,14 +76,14 @@ import "wizards" as Wiz
 
             Comp.IconButtonTextBeside {
                 id: webcam
-                icon.source: prefix + "/images/Webcam.png"
+                icon.source: "../../images/Webcam.png"
                 text: qsTr("WebCam")
                 visible:settings.setFeature_isWebCamOn
             }
 
             Comp.IconButtonTextBeside {
                 id: offsetFix
-                icon.source: prefix + "/images/YouTurnReverse.png" // this is horrible. This has nothing to do with YouTurnReverse.
+                icon.source: "../../images/YouTurnReverse.png" // this is horrible. This has nothing to do with YouTurnReverse.
                 text: qsTr("Offset Fix")
                 visible: settings.setFeature_isOffsetFixOn
             }
@@ -145,7 +145,7 @@ import "wizards" as Wiz
             Comp.IconButtonTextBeside{
                 id: steerChart
                 text: qsTr("Steer Chart")
-                icon.source: prefix + "/images/AutoSteerOn.png"
+                icon.source: "../../images/AutoSteerOn.png"
                 //onClicked: chartsMenu.visible = !chartsMenu.visible, toolsMenu.visible = false, steerCharta.visible = true
                 onClicked:  steerCharta.visible = true
                 visible: true

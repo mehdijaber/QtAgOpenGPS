@@ -54,7 +54,7 @@ Dialog{
         IconButtonTransparent{
             objectName: "btnAddDate"
             id: marker
-            icon.source: prefix + "/images/JobNameCalendar.png"
+            icon.source: "../../images/JobNameCalendar.png"
             Text{
                 anchors.right: parent.left
                 anchors.verticalCenter: parent.verticalCenter
@@ -63,7 +63,7 @@ Dialog{
         }
         IconButtonTransparent{
             objectName: "btnAddTime"
-            icon.source: prefix + "/images/JobNameTime.png"
+            icon.source: "../../images/JobNameTime.png"
             Text{
                 anchors.right: parent.left
                 anchors.verticalCenter: parent.verticalCenter
@@ -73,7 +73,7 @@ Dialog{
     }
     IconButtonTransparent{
         objectName: "btnGetKML"
-        icon.source: prefix + "/images/BoundaryLoadFromGE.png"
+        icon.source: "../../images/BoundaryLoadFromGE.png"
         anchors.bottom: parent.bottom
         anchors.left: parent.left
         anchors.margins: 20
@@ -89,11 +89,11 @@ Dialog{
         spacing: 10
         IconButtonTransparent{
             onClicked: fieldFromKML.visible = false
-            icon.source: prefix + "/images/Cancel64.png"
+            icon.source: "../../images/Cancel64.png"
         }
         IconButtonTransparent{
             objectName: "btnSave"
-            icon.source: prefix + "/images/OK64.png"
+            icon.source: "../../images/OK64.png"
         }
     }
 }

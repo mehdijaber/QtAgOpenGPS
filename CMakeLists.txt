@@ -14,7 +14,9 @@ project(QtAgOpenGPS
 # Configure project options
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_AUTORCC ON)
+set(CMAKE_AUTOMOC ON)
+set(CMAKE_AUTOUIC ON)
+
 
 # Find required libraries
 find_package(Qt6 REQUIRED COMPONENTS Core)
@@ -26,13 +28,107 @@ find_package(Qt6 REQUIRED COMPONENTS QuickWidgets)
 find_package(Qt6 REQUIRED COMPONENTS Network)
 find_package(Qt6 REQUIRED COMPONENTS Multimedia)
 
+
 # Qt magic
 qt_standard_project_setup()
+
+# Add Qt policies
+qt_policy(SET QTP0001 NEW)
+qt_policy(SET QTP0004 NEW)
+
+###### Handling Local QML ######
+# Determine QML mode (local or compiled)
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    set(LOCAL_QML ON) # Enable local QML loading in Debug mode for easier development
+else()
+    set(LOCAL_QML OFF) # Use compiled QML resources in Release mode for production
+endif()
+
+# Handle RCC (Resource Compiler) only in compiled mode
+if(NOT LOCAL_QML)
+    set(CMAKE_AUTORCC ON) # Enable automatic RCC only if resources are compiled
+    message(STATUS "CMAKE_AUTORCC is ON: Using compiled resources")
+else()
+    set(CMAKE_AUTORCC OFF) # Disable RCC for local QML loading
+    message(STATUS "CMAKE_AUTORCC is OFF: Using local QML files")
+endif()
+
+# Add Android-specific handling for QML module
+if(ANDROID)
+    set(LOCAL_QML OFF) # Always disable LOCAL_QML on Android for compatibility
+else()
+    option(LOCAL_QML "Load QML from disc instead of compiling them in.")
+endif()
+
+# Additional messaging for clarity
+if(LOCAL_QML)
+    add_compile_definitions(LOCAL_QML)
+    message("Local QML is ON! Using QML files directly from the source directory")
+
+    # Set the QML import path to the source directory to load files directly
+    set(QML_IMPORT_PATH ${CMAKE_SOURCE_DIR}/qml CACHE STRING "" FORCE)
+else()
+    message("Local QML is OFF. Compiling resources for faster production or Android compatibility.")
+    message("For development details, visit:")
+    message("https://github.com/torriem/QtAgOpenGPS/wiki/Building-QtAgOpenGPS-without-compiling-resources-with-QMake")
+
+    # Notify the user that compiled resources are being used
+    set(QML_IMPORT_PATH ${CMAKE_BINARY_DIR} CACHE STRING "" FORCE)
+endif()
+
+# Install resources for deployment only in compiled mode
+if(NOT LOCAL_QML)
+    install(DIRECTORY ${CMAKE_SOURCE_DIR}/qml DESTINATION ${CMAKE_INSTALL_PREFIX}/qml)
+    install(DIRECTORY ${CMAKE_SOURCE_DIR}/qml/images DESTINATION ${CMAKE_INSTALL_PREFIX}/images)
+endif()
+
+# Find all QML and image files recursively only for compiled mode
+if(NOT LOCAL_QML)
+    file(GLOB_RECURSE QML_FILES
+        "${CMAKE_SOURCE_DIR}/qml/*.qml"
+        "${CMAKE_SOURCE_DIR}/qml/*.js"
+        "${CMAKE_SOURCE_DIR}/images/*.*"
+    )
+
+    # Generate the .qrc file dynamically
+    set(QRC_CONTENT "<!DOCTYPE RCC><RCC version=\"1.0\">\n<qresource prefix=\"/\">\n")
+    foreach(QML_FILE ${QML_FILES})
+        # Vérifiez que le fichier existe, qu'il n'est pas un répertoire et qu'il n'est pas vide
+        if(EXISTS ${QML_FILE} AND NOT IS_DIRECTORY ${QML_FILE} AND NOT QML_FILE STREQUAL "")
+            file(RELATIVE_PATH REL_PATH "${CMAKE_SOURCE_DIR}" ${QML_FILE})
+            # Vérifiez que le chemin relatif est valide
+            if(REL_PATH AND NOT REL_PATH STREQUAL "")
+                set(QRC_CONTENT "${QRC_CONTENT}    <file>${REL_PATH}</file>\n")
+            else()
+                message(WARNING "Invalid relative path for file: ${QML_FILE}")
+            endif()
+        else()
+            message(WARNING "Skipped invalid file or directory: ${QML_FILE}")
+        endif()
+    endforeach()
+    set(QRC_CONTENT "${QRC_CONTENT}</qresource>\n</RCC>\n")
+
+    # Write the .qrc file to the build directory
+    set(QRC_FILE "${CMAKE_SOURCE_DIR}/agopengps.qrc")
+    if(QRC_CONTENT MATCHES "<file>")
+        file(WRITE "${QRC_FILE}" "${QRC_CONTENT}")
+        message(STATUS "Generated resource file: ${QRC_FILE}")
+    else()
+        message(FATAL_ERROR "No valid files found to generate the .qrc file.")
+    endif()
+endif()
+
+###### end script of Local QML handling ######
+
+
 
 # Create the executable
 qt_add_executable(QtAgOpenGPS
     main.cpp
     $<$<NOT:$<BOOL:${LOCAL_QML}>>:agopengps.qrc>
+    aogrenderer.cpp
+    aogrenderer.h
+    aogrenderer.cpp aogrenderer.h # moved renderer in here
     aogproperties.cpp
     aogproperty.h aogproperty.cpp
     aogrenderer.h aogrenderer.cpp
@@ -116,33 +212,25 @@ qt_add_executable(QtAgOpenGPS
     android/res/xml/qtprovider_paths.xml
 )
 
+#Add the QML module
 qt_add_qml_module(QtAgOpenGPS
-    URI AOGRenderer
-    VERSION 1.0
-    QML_FILES qml/MainWindow.qml
-    SOURCES
+     URI AOGRenderer
+     VERSION 1.0
+     QML_FILES qml/MainWindow.qml
+     SOURCES
         aogrenderer.cpp
         aogrenderer.h
-    DEPENDENCIES Qt6::QtQuick
-)
+     DEPENDENCIES Qt6::QtQuick
+ )
 
-if(ANDROID)
-    set(LOCAL_QML OFF)
-else()
-        option(LOCAL_QML "Load QML from disc instead of compiling them in.")
+
+if(NOT ANDROID)
+    set_target_properties(QtAgOpenGPS PROPERTIES
+        QT_QML_MODULE_INSTALL_QMLTYPES TRUE
+        QT_QML_MODULE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}
+    )
 endif()
 
-if(LOCAL_QML)
-    add_compile_definitions(LOCAL_QML)
-
-    # Display the qrc file in the project tree without compiling it
-    add_custom_target(AOGQML SOURCES agopengps.qrc)
-
-    message("Local QML is ON!")
-elseif(NOT ANDROID)
-    message("Local QML is off. Turn on for faster QML development")
-    message("See https://github.com/torriem/QtAgOpenGPS/wiki/Building-QtAgOpenGPS-without-compiling-resources-with-QMake for more information")
-endif()
 
 # Where to look for header files
 target_include_directories(QtAgOpenGPS PRIVATE
@@ -150,16 +238,18 @@ target_include_directories(QtAgOpenGPS PRIVATE
     classes
 )
 
+
 # Libraries to link
 target_link_libraries(QtAgOpenGPS PRIVATE
     Qt6::Core
     Qt6::Widgets
     Qt6::Gui
-    Qt6::OpenGL
     Qt6::Quick
     Qt6::QuickWidgets
     Qt6::Network
     Qt6::Multimedia
+    Qt6::OpenGL
+    Qt6::Qml # Add this line to include the Qt Quick module
 )
 
 # Compile defines
@@ -174,3 +264,4 @@ set_target_properties(QtAgOpenGPS PROPERTIES
 )
 
 add_subdirectory(QtAgIO)
+

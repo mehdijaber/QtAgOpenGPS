@@ -63,7 +63,7 @@ MoveablePopup {
             anchors.bottomMargin: 1
             width: childrenRect.width
             IconButtonTransparent{
-				icon.source: prefix + "/images/Trash.png"
+				icon.source: "../../images/Trash.png"
 				onClicked: {
                     if (trackView.currentIndex > -1) {
                         if (aog.currentTrack === trackView.currentIndex)
@@ -74,7 +74,7 @@ MoveablePopup {
 				}
             }
             IconButtonTransparent{
-                icon.source: prefix + "/images/FileEditName.png"
+                icon.source: "../../images/FileEditName.png"
                 onClicked: {
                     if (trackView.currentIndex > -1) {
                         editLineName.set_name(linesInterface.abLinesList[trackView.currentIndex].name)
@@ -84,7 +84,7 @@ MoveablePopup {
             }
             IconButtonTransparent{
                 objectName: "btnLineCopy"
-                icon.source: prefix + "/images/FileCopy.png"
+                icon.source: "../../images/FileCopy.png"
                 onClicked: {
                     if(trackView.currentIndex > -1) {
                         copyLineName.set_name("Copy of " + linesInterface.abLinesList[trackView.currentIndex].name)
@@ -94,14 +94,14 @@ MoveablePopup {
             }
             IconButtonTransparent{
                 objectName: "btnLineSwapPoints"
-                icon.source: prefix + "/images/ABSwapPoints.png"
+                icon.source: "../../images/ABSwapPoints.png"
                 onClicked: {
                     if(trackView.currentIndex > -1)
                         linesInterface.abLine_swapHeading(trackView.currentIndex);
                 }
             }
             IconButtonTransparent{
-				icon.source: prefix + "/images/Cancel64.png"
+				icon.source: "../../images/Cancel64.png"
 				onClicked: {
 					trackPickerDialog.visible = false
 				}
@@ -116,16 +116,16 @@ MoveablePopup {
             anchors.bottomMargin: 1
             width: childrenRect.width
             IconButtonTransparent{ //not sure what this does in aog--doesn't work on wine
-                icon.source: prefix + "/images/UpArrow64.png"
+                icon.source: "../../images/UpArrow64.png"
             }
             IconButtonTransparent{
-                icon.source: prefix + "/images/DnArrow64.png"
+                icon.source: "../../images/DnArrow64.png"
             }
             IconButtonTransparent{
-                icon.source: prefix + "/images/ABLinesHideShow.png"
+                icon.source: "../../images/ABLinesHideShow.png"
             }
 			IconButtonTransparent{
-				icon.source: prefix + "/images/AddNew.png"
+				icon.source: "../../images/AddNew.png"
 				onClicked: {
                     trackNewButtons.show()
 					trackListDialog.visible = false
@@ -133,7 +133,7 @@ MoveablePopup {
 			}
             IconButtonTransparent{
                 objectName: "btnLineExit" //this is not cancel, rather, save and exit
-                icon.source: prefix + "/images/OK64.png"
+                icon.source: "../../images/OK64.png"
                 onClicked: {
                     trackPickerDialog.visible = false
                     if (trackView.selected > -1 && trackView.trackVisible) {

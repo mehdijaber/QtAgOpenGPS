@@ -75,7 +75,7 @@ Dialog {
             IconButtonTransparent {
                 id: deleteField
                 objectName: "btnDeleteField"
-                icon.source: prefix + "/images/skull.png"
+                icon.source: "../../images/skull.png"
                 text: "Delete Field"
                 //radius: 0
                 //color3: "white"
@@ -93,7 +93,7 @@ Dialog {
             anchors.right: parent.right
             IconButtonTransparent {
                 id: sort
-                icon.source: prefix + "/images/Sort.png"
+                icon.source: "../../images/Sort.png"
                 //color3: "white"
                 //height: 75
                 text: "Toggle Sort"
@@ -108,7 +108,7 @@ Dialog {
             IconButtonTransparent {
                 id: cancel
                 objectName: "btnCancel"
-                icon.source: prefix + "/images/Cancel64.png"
+                icon.source: "../../images/Cancel64.png"
                 text: "Cancel"
                 //color3: "white"
                 //radius: 0
@@ -123,7 +123,7 @@ Dialog {
             IconButtonTransparent {
                 id: useSelected
                 objectName: "btnUseSelected"
-                icon.source: prefix + "/images/FileOpen.png"
+                icon.source: "../../images/FileOpen.png"
                 text: "Use Selected"
                 //radius: 0
                 //color3: "white"

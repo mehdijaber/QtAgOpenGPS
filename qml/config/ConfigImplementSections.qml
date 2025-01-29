@@ -47,7 +47,7 @@ Rectangle{
                 Image{
                     id: image
 
-                    source: utils.isTrue(settings.setTool_isSectionsNotZones) ? prefix + "/images/Config/ConT_Asymmetric.png" : prefix + "/images/Config/ConT_Symmetric.png"
+                    source: utils.isTrue(settings.setTool_isSectionsNotZones) ? "../../images/Config/ConT_Asymmetric.png" : "../../images/Config/ConT_Symmetric.png"
                     anchors.fill: parent
                 }
             }
@@ -62,8 +62,8 @@ Rectangle{
             onValueModified: settings.setVehicle_minCoverage = value
         }
         IconButton{
-            icon.source: prefix + "/images/SectionOffBoundary.png"
-            iconChecked: prefix + "/images/SectionOnBoundary.png"
+            icon.source: "../../images/SectionOffBoundary.png"
+            iconChecked: "../../images/SectionOnBoundary.png"
             anchors.bottom: parent.bottom
             implicitWidth: 100 * theme.scaleWidth
             implicitHeight: 100 * theme.scaleHeight
@@ -90,7 +90,7 @@ Rectangle{
             Image{
                 anchors.bottom: parent.top
                 anchors.horizontalCenter: parent.horizontalCenter
-                source: prefix + "/images/SectionOffBelow.png"
+                source: "../../images/SectionOffBelow.png"
             }
         }
     }

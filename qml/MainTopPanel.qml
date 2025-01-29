@@ -12,7 +12,7 @@ import "components" as Comp
             id: btnfileMenu
             height: parent.height
             width: 75 * theme.scaleWidth
-            icon.source: prefix + "/images/fileMenu.png"
+            icon.source: "../../images/fileMenu.png"
             onClicked: hamburgerMenu.visible = true
         }
 
@@ -69,7 +69,7 @@ import "components" as Comp
             spacing: 5 * theme.scaleWidth
             Comp.IconButton {
                 id: btnFieldInfo
-                icon.source: prefix + "/images/FieldStats.png"
+                icon.source: "../../images/FieldStats.png"
                 Layout.alignment: Qt.AlignCenter
                 implicitWidth: theme.buttonSize
                 height:parent.height
@@ -82,7 +82,7 @@ import "components" as Comp
             }
             Comp.IconButtonColor{
                 id: rtkStatus
-                icon.source: prefix + "/images/GPSQuality.png"
+                icon.source: "../../images/GPSQuality.png"
                 implicitWidth: 75 * theme.scaleWidth
                 implicitHeight: parent.height
                 color: "yellow"
@@ -104,7 +104,7 @@ import "components" as Comp
             }
             Comp.IconButton {
                 id: btnBlockageInfo
-                icon.source: prefix + "/images/Blockage.png"
+                icon.source: "../../images/Blockage.png"
                 Layout.alignment: Qt.AlignCenter
                 implicitWidth: theme.buttonSize
                 height:parent.height
@@ -130,14 +130,14 @@ import "components" as Comp
             }
             Comp.IconButtonTransparent{
                 height: parent.height
-                icon.source: prefix + "/images/WindowMinimize.png"
+                icon.source: "../../images/WindowMinimize.png"
                 width: 75 * theme.scaleWidth
                 onClicked: mainWindow.showMinimized()
             }
             Comp.IconButtonTransparent{
                 id: btnMaximize
                 height: parent.height
-                icon.source: prefix + "/images/WindowMaximize.png"
+                icon.source: "../../images/WindowMaximize.png"
                 width: 75 * theme.scaleWidth
                 onClicked: {
                     console.debug("Visibility is " + mainWindow.visibility)
@@ -152,7 +152,7 @@ import "components" as Comp
             Comp.IconButtonTransparent{
                 height: parent.height
                 width: 75 * theme.scaleWidth
-                icon.source: prefix + "/images/WindowClose.png"
+                icon.source: "../../images/WindowClose.png"
                 onClicked: {
                     mainWindow.save_everything()
                     mainWindow.close()

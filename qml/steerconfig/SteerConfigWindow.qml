@@ -55,7 +55,7 @@ MoveablePopup {
                     checkable: true
                     checked: true
                     colorChecked: "lightgray"
-                    icon.source: prefix + "/images/Steer/ST_SteerTab.png"
+                    icon.source: "../../images/Steer/ST_SteerTab.png"
                     implicitHeight: 50 * theme.scaleHeight
                     implicitWidth: parent.width /4 - 4
                 }
@@ -63,7 +63,7 @@ MoveablePopup {
 					id: gainBtn
                     checkable: true
                     colorChecked: "lightgray"
-                    icon.source: prefix + "/images/Steer/ST_GainTab.png"
+                    icon.source: "../../images/Steer/ST_GainTab.png"
                     implicitHeight: 50 * theme.scaleHeight
                     implicitWidth: parent.width /4 - 4
                 }
@@ -71,7 +71,7 @@ MoveablePopup {
 					id: stanleyBtn
                     checkable: true
                     colorChecked: "lightgray"
-                    icon.source: prefix + "/images/Steer/ST_StanleyTab.png"
+                    icon.source: "../../images/Steer/ST_StanleyTab.png"
                     implicitHeight: 50 * theme.scaleHeight
                     implicitWidth: parent.width /4 - 4
                 }
@@ -79,7 +79,7 @@ MoveablePopup {
 					id: ppBtn
                     checkable: true
                     colorChecked: "lightgray"
-                    icon.source: prefix + "/images/Steer/Sf_PPTab.png"
+                    icon.source: "../../images/Steer/Sf_PPTab.png"
                     implicitHeight: 50 * theme.scaleHeight
                     implicitWidth: parent.width /4 - 4
                 }
@@ -124,7 +124,7 @@ MoveablePopup {
                     IconButtonTransparent { //was zero button
                         width: height*2
                         Layout.alignment: Qt.AlignCenter
-                        icon.source: prefix + "/images/SteerCenter.png"
+                        icon.source: "../../images/SteerCenter.png"
                         implicitHeight: parent.height /5 -20
                         //visible: false
                         visible: steerBtn.checked
@@ -304,10 +304,10 @@ MoveablePopup {
                     anchors.bottom: parent.bottom
                     anchors.left: parent.left
                     height: slidersColumn.height
-                    source: prefix + (steerBtn.checked === true ? "/images/Steer/Sf_SteerTab.png" :
-                                     gainBtn.checked === true ? "/images/Steer/Sf_GainTab.png" :
-                                     stanleyBtn.checked === true ? "/images/Steer/Sf_Stanley.png" :
-                                    "/images/Steer/Sf_PP.png")
+                    source: prefix + (steerBtn.checked === true ? "../../images/Steer/Sf_SteerTab.png" :
+                                     gainBtn.checked === true ? "../../images/Steer/Sf_GainTab.png" :
+                                     stanleyBtn.checked === true ? "../../images/Steer/Sf_Stanley.png" :
+                                    "../../images/Steer/Sf_PP.png")
                     width: parent.width
                 }
             }
@@ -348,7 +348,7 @@ MoveablePopup {
                     IconButtonTransparent{
                         //show angle info window
                         Layout.alignment: Qt.AlignRight
-                        icon.source: prefix + "/images/ArrowRight.png"
+                        icon.source: "../../images/ArrowRight.png"
                         implicitHeight: parent.height
                         implicitWidth: parent.width/4
                         onClicked: steerConfigSettings.show()
@@ -378,8 +378,8 @@ MoveablePopup {
                     id: btnFreeDrive
                     border: 2
                     color3: "white"
-                    icon.source: prefix + "/images/SteerDriveOff.png"
-                    iconChecked: prefix + "/images/SteerDriveOn.png"
+                    icon.source: "../../images/SteerDriveOff.png"
+                    iconChecked: "../../images/SteerDriveOn.png"
                     implicitHeight: parent.height
                     implicitWidth:  parent.width /4 - 4 * theme.scaleWidth
                     isChecked: false
@@ -390,7 +390,7 @@ MoveablePopup {
                     //id: btnSteerAngleDown
                     border: 2
                     color3: "white"
-                    icon.source: prefix + "/images/SnapLeft.png"
+                    icon.source: "../../images/SnapLeft.png"
                     implicitHeight: parent.height
                     implicitWidth:  parent.width /4 - 4 * theme.scaleWidth
                     onClicked: aog.btnSteerAngleDown()
@@ -400,7 +400,7 @@ MoveablePopup {
                     //id: btnSteerAngleUp
                     border: 2
                     color3: "white"
-                    icon.source: prefix + "/images/SnapRight.png"
+                    icon.source: "../../images/SnapRight.png"
                     implicitHeight: parent.height
                     implicitWidth:  parent.width /4 - 4 * theme.scaleWidth
                     onClicked: aog.btnSteerAngleUp()
@@ -410,7 +410,7 @@ MoveablePopup {
                     //id: btnFreeDriveZero
                     border: 2
                     color3: "white"
-                    icon.source: prefix + "/images/SteerZeroSmall.png"
+                    icon.source: "../../images/SteerZeroSmall.png"
                     implicitHeight: parent.height
                     implicitWidth:  parent.width /4 - 4 * theme.scaleWidth
                     onClicked: aog.btnFreeDriveZero()
@@ -435,8 +435,8 @@ MoveablePopup {
                 border: 2
                 color3: "white"
                 height: 75 * theme.scaleHeight
-                icon.source: prefix + "/images/BoundaryRecord.png"
-                iconChecked: prefix + "/images/Stop.png"
+                icon.source: "../../images/BoundaryRecord.png"
+                iconChecked: "../../images/Stop.png"
                 isChecked: false
                 width: 75 * theme.scaleWidth
                 onClicked: aog.btnStartSA()

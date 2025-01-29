@@ -11,9 +11,9 @@ Item{
     Image{
         id: autoTurnImage
         source: if(!aog.isYouTurnRight)
-                    prefix + "/images/Images/z_TurnRight.png"
+                    "../../images/Images/z_TurnRight.png"
                 else
-                    prefix + "/images/Images/z_TurnLeft.png"
+                    "../../images/Images/z_TurnLeft.png"
         visible: false
         anchors.fill: parent
     }

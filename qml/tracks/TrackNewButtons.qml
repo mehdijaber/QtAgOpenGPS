@@ -23,7 +23,7 @@ MoveablePopup {
         title: "Tracks"
 		anchors.fill: parent
 		IconButtonColor{
-			icon.source: prefix + "/images/Cancel64.png"
+			icon.source: "../../images/Cancel64.png"
 			anchors.bottom: parent.bottom
 			anchors.left: parent.left
 			anchors.bottomMargin: 10 * theme.scaleHeight
@@ -35,7 +35,7 @@ MoveablePopup {
 		}
 		IconButtonColor{ //todo
 			id: btnLoadFromKML
-			icon.source: prefix + "/images/BoundaryLoadFromGE.png"
+			icon.source: "../../images/BoundaryLoadFromGE.png"
 			anchors.verticalCenter: parent.verticalCenter
 			anchors.left: parent.left
 			anchors.leftMargin: 40 * theme.scaleWidth
@@ -59,7 +59,7 @@ MoveablePopup {
             rows: 3
             columns: 2
 			IconButtonColor{
-				icon.source: prefix + "/images/ABLatLonLatLon.png"
+				icon.source: "../../images/ABLatLonLatLon.png"
 				implicitWidth: 100 * theme.scaleWidth
 				implicitHeight: 100 * theme.scaleHeight
 				color: "#ffffff"
@@ -70,7 +70,7 @@ MoveablePopup {
 				}
 			}
 			IconButtonColor{
-				icon.source: prefix + "/images/ABLatLonHeading.png"
+				icon.source: "../../images/ABLatLonHeading.png"
 				implicitWidth: 100 * theme.scaleWidth
 				implicitHeight: 100 * theme.scaleHeight
 				color: "#ffffff"
@@ -81,7 +81,7 @@ MoveablePopup {
 				}
 			}
 			IconButtonColor{
-				icon.source: prefix + "/images/ABPivot.png"
+				icon.source: "../../images/ABPivot.png"
 				implicitWidth: 100 * theme.scaleWidth
 				implicitHeight: 100 * theme.scaleHeight
 				color: "#ffffff"
@@ -92,7 +92,7 @@ MoveablePopup {
 				}
 			}
             IconButtonColor{
-                icon.source: prefix + "/images/ABTrackA+.png"
+                icon.source: "../../images/ABTrackA+.png"
                 implicitWidth: 100 * theme.scaleWidth
                 implicitHeight: 100 * theme.scaleHeight
                 color: "#ffffff"
@@ -103,7 +103,7 @@ MoveablePopup {
 				}
             }
             IconButtonColor{
-                icon.source: prefix + "/images/ABTrackAB.png"
+                icon.source: "../../images/ABTrackAB.png"
                 implicitWidth: 100 * theme.scaleWidth
                 implicitHeight: 100 * theme.scaleHeight
                 color: "#ffffff"
@@ -114,7 +114,7 @@ MoveablePopup {
 				}
             }
             IconButtonColor{
-                icon.source: prefix + "/images/ABTrackCurve.png"
+                icon.source: "../../images/ABTrackCurve.png"
                 implicitWidth: 100 * theme.scaleWidth
                 implicitHeight: 100 * theme.scaleHeight
                 color: "#ffffff"

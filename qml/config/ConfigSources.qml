@@ -50,7 +50,7 @@ Rectangle{
                 height:100 * theme.scaleHeight
                 text: "Dual"
                 checkable: true
-                icon.source: prefix + "/images/Config/Con_SourcesGPSDual.png"
+                icon.source: "../../images/Config/Con_SourcesGPSDual.png"
 
                 property string headingSource: settings.setGPS_headingFromWhichSource
 
@@ -79,7 +79,7 @@ Rectangle{
                 height:100 * theme.scaleHeight
                 text: "Fix"
                 checkable: true
-                icon.source: prefix + "/images/Config/Con_SourcesGPSSingle.png"
+                icon.source: "../../images/Config/Con_SourcesGPSSingle.png"
 
                 property string headingSource: settings.setGPS_headingFromWhichSource
 
@@ -130,7 +130,7 @@ Rectangle{
                 width:150 * theme.scaleWidth
                 height:100 * theme.scaleHeight
                 id: alarm
-                icon.source: prefix + "/images/Config/Con_SourcesRTKAlarm.png"
+                icon.source: "../../images/Config/Con_SourcesRTKAlarm.png"
                 isChecked: settings.setGPS_isRTK
                 onClicked: settings.setGPS_isRTK = true
             }
@@ -148,7 +148,7 @@ Rectangle{
                 height:100 * theme.scaleHeight
                 checkable: true
                 id: killAutoSteer
-                icon.source: prefix + "/images/AutoSteerOff.png"
+                icon.source: "../../images/AutoSteerOff.png"
                 isChecked: settings.setGPS_isRTK_KillAutoSteer
                 onClicked: settings.setGPS_isRTK_KillAutoSteer = true
             }
@@ -302,7 +302,7 @@ Rectangle{
 
         Image {
             id: head
-            source: prefix + "/images/Config/Con_SourcesHead.png"
+            source: "../../images/Config/Con_SourcesHead.png"
             width: 100 * theme.scaleWidth
 			height: 100 * theme.scaleHeight
             anchors.top: parent.top

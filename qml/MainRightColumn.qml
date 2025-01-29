@@ -22,8 +22,8 @@ ColumnLayout {
         isChecked: aog.btnIsContourLocked
         visible: btnContour.checked
         checkable: true
-        icon.source: prefix + "/images/ColorUnlocked.png"
-        iconChecked: prefix + "/images/ColorLocked.png"
+        icon.source: "../../images/ColorUnlocked.png"
+        iconChecked: "../../images/ColorLocked.png"
         buttonText: "Lock"
         onClicked: {
             aog.btnContourLock()
@@ -50,8 +50,8 @@ ColumnLayout {
         id: btnContour
         isChecked: aog.isContourBtnOn //set value from backend
         checkable: true
-        icon.source: prefix + "/images/ContourOff.png"
-        iconChecked: prefix + "/images/ContourOn.png"
+        icon.source: "../../images/ContourOff.png"
+        iconChecked: "../../images/ContourOn.png"
         buttonText: "Contour"
         onClicked: {
             aog.btnContour()
@@ -65,14 +65,14 @@ ColumnLayout {
 
     Comp.IconButton{
         id: btnTrackCycle
-        icon.source: prefix + "/images/ABLineCycle.png"
+        icon.source: "../../images/ABLineCycle.png"
         Layout.alignment: Qt.AlignCenter
         implicitWidth: theme.buttonSize
         implicitHeight: theme.buttonSize
     }
     Comp.IconButton{
         id: btnTrackCycleBk
-        icon.source: prefix + "/images/ABLineCycleBk.png"
+        icon.source: "../../images/ABLineCycleBk.png"
         Layout.alignment: Qt.AlignCenter
         implicitWidth: theme.buttonSize
         implicitHeight: theme.buttonSize
@@ -81,8 +81,8 @@ ColumnLayout {
         id: btnAutoTrack
         checkable: true
         isChecked: aog.autoTrackBtnState
-        icon.source: prefix + "/images/AutoTrackOff.png"
-        iconChecked: prefix + "/images/AutoTrack.png"
+        icon.source: "../../images/AutoTrackOff.png"
+        iconChecked: "../../images/AutoTrack.png"
         Layout.alignment: Qt.AlignCenter
         implicitWidth: theme.buttonSize
         implicitHeight: theme.buttonSize
@@ -93,8 +93,8 @@ ColumnLayout {
         id: btnSectionManual
         isChecked: aog.manualBtnState == 2
         checkable: true
-        icon.source: prefix + "/images/ManualOff.png"
-        iconChecked: prefix + "/images/ManualOn.png"
+        icon.source: "../../images/ManualOff.png"
+        iconChecked: "../../images/ManualOn.png"
         buttonText: "Manual"
         onCheckedChanged: {
             if (checked) {
@@ -113,8 +113,8 @@ ColumnLayout {
         id: btnSectionAuto
         isChecked: aog.autoBtnState == 1
         checkable: true
-        icon.source: prefix + "/images/SectionMasterOff.png"
-        iconChecked: prefix + "/images/SectionMasterOn.png"
+        icon.source: "../../images/SectionMasterOff.png"
+        iconChecked: "../../images/SectionMasterOn.png"
         buttonText: "Auto"
         onCheckedChanged: {
             if (checked) {
@@ -131,8 +131,8 @@ ColumnLayout {
         id: btnAutoYouTurn
         isChecked: aog.isYouTurnBtnOn
         checkable: true
-        icon.source: prefix + "/images/YouTurnNo.png"
-        iconChecked: prefix + "/images/YouTurn80.png"
+        icon.source: "../../images/YouTurnNo.png"
+        iconChecked: "../../images/YouTurn80.png"
         buttonText: "AutoUturn"
         visible: aog.isTrackOn
         enabled: aog.isBtnAutoSteerOn
@@ -140,8 +140,8 @@ ColumnLayout {
     }
     Comp.MainWindowBtns {
         id: btnAutoSteer
-        icon.source: prefix + "/images/AutoSteerOff.png"
-        iconChecked: prefix + "/images/AutoSteerOn.png"
+        icon.source: "../../images/AutoSteerOff.png"
+        iconChecked: "../../images/AutoSteerOn.png"
         checkable: true
         checked: aog.isBtnAutoSteerOn
         //enabled: aog.isTrackOn || aog.isContourBtnOn

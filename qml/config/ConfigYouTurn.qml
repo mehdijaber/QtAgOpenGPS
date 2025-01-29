@@ -28,22 +28,22 @@ Item {
             height: parent.height /2
 
             Image {
-                source: prefix + "/images/Config/ConU_UturnRadius.png"
+                source: "../../images/Config/ConU_UturnRadius.png"
                 height: 150
                 width: 150
             }
             Image {
-                source: prefix + "/images/Config/ConU_UturnDistance.png"
+                source: "../../images/Config/ConU_UturnDistance.png"
                 height: 150
                 width: 150
             }
             Image {
-                source: prefix + "/images/Config/ConU_UturnLength.png"
+                source: "../../images/Config/ConU_UturnLength.png"
                 height: 150
                 width: 150
             }
             Image {
-                source: prefix + "/images/Config/ConU_UturnSmooth.png"
+                source: "../../images/Config/ConU_UturnSmooth.png"
                 height: 150
                 width: 150
             }
@@ -135,7 +135,7 @@ Radius")
 
                 IconButtonColor{
                     id: uTurnUBtn
-                    icon.source: prefix + "/images/YouTurnU.png"
+                    icon.source: "../../images/YouTurnU.png"
                     checkable: true
                     isChecked: settings.set_uTurnStyle === 0
                     onClicked: settings.set_uTurnStyle = 1
@@ -143,7 +143,7 @@ Radius")
                 IconButtonColor{
                     id: uTurnHBtn
                     checkable: true
-                    icon.source: prefix + "/images/YouTurnH.png"
+                    icon.source: "../../images/YouTurnH.png"
                     isChecked: settings.set_uTurnStyle === 1
                     onClicked: settings.set_uTurnStyle = 1
                 }

@@ -49,25 +49,25 @@ RowLayout{
         id: btnYouSkip // the "Fancy Skip" button
         isChecked: false
         checkable: true
-        icon.source: prefix + "/images/YouSkipOff.png"
-        iconChecked: prefix + "/images/YouSkipOn.png"
+        icon.source: "../../images/YouSkipOff.png"
+        iconChecked: "../../images/YouSkipOn.png"
         buttonText: "YouSkips"
     }
     Comp.MainWindowBtns { //reset trailing tool to straight back
         id: btnResetTool
-        icon.source: prefix + "/images/ResetTool.png"
+        icon.source: "../../images/ResetTool.png"
         buttonText: "Reset Tool"
         onClicked: aog.btnResetTool()
         visible: settings.setTool_isToolTrailing === true //hide if front or rear 3 pt
     }
     Comp.MainWindowBtns {
         id: btnSectionMapping
-        icon.source: prefix + "/images/SectionMapping.png"
+        icon.source: "../../images/SectionMapping.png"
         onClicked: cpSectionColor.open()
     }
     Comp.MainWindowBtns {
         id: btnTramLines
-        icon.source: prefix + "/images/TramLines.png"
+        icon.source: "../../images/TramLines.png"
         buttonText: "Tram Lines"
         Layout.alignment: Qt.AlignCenter
         implicitWidth: theme.buttonSize
@@ -80,8 +80,8 @@ RowLayout{
         checkable: true
         disabled: btnHeadland.checked
         visible: utils.isTrue(settings.setArdMac_isHydEnabled) && btnHeadland.visible
-        icon.source: prefix + "/images/HydraulicLiftOff.png"
-        iconChecked: prefix + "/images/HydraulicLiftOn.png"
+        icon.source: "../../images/HydraulicLiftOff.png"
+        iconChecked: "../../images/HydraulicLiftOn.png"
         buttonText: "HydLift"
         onClicked: {
             isOn = !isOn
@@ -92,8 +92,8 @@ RowLayout{
         id: btnHeadland
         isChecked: aog.isHeadlandOn
         checkable: true
-        icon.source: prefix + "/images/HeadlandOff.png"
-        iconChecked: prefix + "/images/HeadlandOn.png"
+        icon.source: "../../images/HeadlandOff.png"
+        iconChecked: "../../images/HeadlandOn.png"
         buttonText: "Headland"
         onClicked: aog.btnHeadland()
     }
@@ -101,7 +101,7 @@ RowLayout{
         id: btnFlag
         objectName: "btnFlag"
         isChecked: false
-        icon.source: prefix + "/images/FlagRed.png"
+        icon.source: "../../images/FlagRed.png"
         onPressAndHold: {
             if (contextFlag.visible) {
                 contextFlag.visible = false;
@@ -114,8 +114,8 @@ RowLayout{
 
     Comp.MainWindowBtns {
         id: btnTrack
-        icon.source: prefix + "/images/TrackOff.png"
-        iconChecked: prefix + "/images/TrackOn.png"
+        icon.source: "../../images/TrackOff.png"
+        iconChecked: "../../images/TrackOn.png"
         buttonText: "Track"
         onClicked: trackButtons.visible = !trackButtons.visible
     }

@@ -12,7 +12,7 @@ Grid{
         implicitHeight: 65 * theme.scaleHeight
         implicitWidth: 85 * theme.scaleWidth
         imageFillMode: Image.Stretch
-        icon.source: prefix + "/images/qtSpecific/z_TurnManualL.png"
+        icon.source: "../../images/qtSpecific/z_TurnManualL.png"
         onClicked: {
             if (settings.setAS_functionSpeedLimit > aog.speedKph) {
                 console.debug("limit ", settings.setAS_functionSpeedLimit, " speed ", aog.speedKph)
@@ -28,7 +28,7 @@ Grid{
         implicitHeight: 65 * theme.scaleHeight
         implicitWidth: 85 * theme.scaleWidth
         imageFillMode: Image.Stretch
-        icon.source: prefix + "/images/qtSpecific/z_TurnManualR.png"
+        icon.source: "../../images/qtSpecific/z_TurnManualR.png"
         onClicked: {
             if (settings.setAS_functionSpeedLimit > aog.speedKph)
                 aog.uturn(true)
@@ -41,7 +41,7 @@ Grid{
         implicitHeight: 65 * theme.scaleHeight
         implicitWidth: 85 * theme.scaleWidth
         imageFillMode: Image.Stretch
-        icon.source: prefix + "/images/qtSpecific/z_LateralManualL.png"
+        icon.source: "../../images/qtSpecific/z_LateralManualL.png"
         onClicked: {
             if (settings.setAS_functionSpeedLimit > aog.speedKph)
                 aog.lateral(false)
@@ -54,7 +54,7 @@ Grid{
         implicitHeight: 65 * theme.scaleHeight
         implicitWidth: 85 * theme.scaleWidth
         imageFillMode: Image.Stretch
-        icon.source: prefix + "/images/qtSpecific/z_LateralManualR.png"
+        icon.source: "../../images/qtSpecific/z_LateralManualR.png"
         onClicked: {
             if (settings.setAS_functionSpeedLimit > aog.speedKph)
                 aog.lateral(true)

@@ -7,7 +7,7 @@ import QtQuick
 import QtQuick.Window
 import QtQuick.Effects
 import QtQuick.Dialogs
-import AOGRenderer
+import AOGRenderer 1.0  // Ensure this matches the URI and version in CMakeLists.txt
 
 import "interfaces" as Interfaces
 import "boundary" as Boundary
@@ -18,7 +18,6 @@ import "tracks" as Tracks
 import "components" as Comp
 
 Window {
-
 
     AOGTheme{
         id: theme
@@ -239,7 +238,7 @@ Window {
                 y: aog.vehicle_xy.y - height
                 width: 70 * theme.scaleWidth
                 height: 70 * theme.scaleHeight
-                source: prefix + "/images/Images/z_ReverseArrow.png"
+                source: "../../images/Images/z_ReverseArrow.png"
                 visible: vehicleInterface.isReverse || vehicleInterface.isChangingDirection
             }
             MouseArea{
@@ -281,7 +280,7 @@ Window {
 
         Image {
             id: noGPSImage
-            source: prefix + "/images/Images/z_NoGPS.png"
+            source: "../../images/Images/z_NoGPS.png"
             anchors.centerIn: parent
             anchors.margins: 200
             visible: noGPS.visible
@@ -352,8 +351,8 @@ Window {
             checkable: true
             isChecked: true
             visible: false
-            icon.source: prefix + "/images/ContourPriorityLeft.png"
-            iconChecked: prefix + "/images/ContourPriorityRight.png"
+            icon.source: "../../images/rPriorityLeft.png"
+            iconChecked: "../../images/rPriorityRight.png"
             onClicked: aog.btnContourPriority(checked)
         }
 
@@ -384,15 +383,15 @@ Window {
                 anchors.top: parent.top
                 anchors.left: parent.left
                 anchors.margins: 30
-                icon.source: prefix + "/images/Pan.png"
-                iconChecked: prefix + "/images/SwitchOff.png"
+                iconChecked: "../../images/Off.png"
+                icon.source: "../../images/g"
                 onClicked: aog.panMode = !aog.panMode
             }
             Image{
                 id: hydLiftIndicator
                 property bool isDown: aog.hydLiftDown
                 visible: false
-                source: prefix + "/images/Images/z_Lift.png"
+                source: "../../images/Images/z_Lift.png"
                 anchors.right: parent.right
                 anchors.verticalCenter: parent.verticalCenter
                 width: 80 * theme.scaleWidth
@@ -592,7 +591,7 @@ Window {
                 anchors.leftMargin: 20
                 anchors.top: parent.top
                 anchors.topMargin: 20
-                visible: false
+                visible: true
                 z:1
             }
 
@@ -612,7 +611,7 @@ Window {
                 visible: aog.isJobStarted
                 width: 45 * theme.scaleWidth
                 height: 25 * theme.scaleHeight
-                icon.source: prefix + "/images/MenuHideShow.png"
+                icon.source: "../../images/deShow.png"
                 onClicked: if(leftColumn.visible){
                                leftColumn.visible = false
                            }else{
@@ -636,14 +635,14 @@ Window {
                     implicitWidth: 30 * theme.scaleWidth
                     implicitHeight: 30 * theme.scaleHeight
                     radius: 0
-                    icon.source: prefix + "/images/ZoomIn48.png"
+                    icon.source:  "../../images/ZoomIn48.png"
                     onClicked: aog.zoomIn()
                 }
                 Comp.IconButton{
                     implicitWidth: 30 * theme.scaleWidth
                     implicitHeight: 30 * theme.scaleHeight
                     radius: 0
-                    icon.source: prefix + "/images/ZoomOut48.png"
+                    icon.source: "../../images/ZoomOut48.png"
                     onClicked: aog.zoomOut()
                 }
             }
@@ -806,8 +805,16 @@ Window {
             id: closeDialog
             width: 500 * theme.scaleWidth
             height: 100 * theme.scaleHeight
-            anchors.horizontalCenter: parent.horizontalCenter
-            anchors.verticalCenter: parent.verticalCenter
+            anchors.horizontalCenter: leftColumn.horizontalCenter
+            anchors.verticalCenter: leftColumn.verticalCenter
+            anchors.left: leftColumn.right
+            anchors.right: leftColumn.left
+            anchors.top: leftColumn.bottom
+            anchors.bottom: leftColumn.top
+            anchors.leftMargin: 166
+            anchors.rightMargin: -756
+            anchors.topMargin: -433
+            anchors.bottomMargin: -433
             color: aog.backgroundColor
             border.color: aog.blackDayWhiteNight
             border.width: 2
@@ -818,7 +825,7 @@ Window {
                 color1: "transparent"
                 color2: "transparent"
                 color3: "transparent"
-                icon.source: prefix + "/images/back-button.png"
+                icon.source: "../../images/utton.png"
                 onClicked: parent.visible = false
             }
             Comp.IconButtonText{
@@ -827,7 +834,7 @@ Window {
                 color1: "transparent"
                 color2: "transparent"
                 color3: "transparent"
-                icon.source: prefix + "/images/ExitAOG.png"
+                icon.source: "../../images/G.png"
                 onClicked: {
                     mainWindow.save_everything()
                     Qt.quit()
@@ -889,28 +896,28 @@ Window {
             Comp.IconButton {
                 id: redFlag
                 objectName: "btnRedFlag"
-                icon.source: prefix + "/images/FlagRed.png";
+                icon.source: "../../images/d.png";
             }
             Comp.IconButton {
                 id: greenFlag
                 objectName: "btnGreenFlag"
-                icon.source: prefix + "/images/FlagGrn.png";
+                icon.source: "../../images/n.png";
             }
             Comp.IconButton {
                 id: yellowFlag
                 objectName: "btnYellowFlag"
-                icon.source: prefix + "/images/FlagYel.png";
+                icon.source: "../../images/l.png";
             }
             Comp.IconButton {
                 id: deleteFlag
                 objectName: "btnDeleteFlag"
-                icon.source: prefix + "/images/FlagDelete.png"
+                icon.source: "../../images/lete.png"
                 enabled: false
             }
             Comp.IconButton {
                 id: deleteAllFlags
                 objectName: "btnDeleteAllFlags"
-                icon.source: prefix + "/images/FlagDeleteAll.png"
+                icon.source: "../../images/leteAll.png"
                 enabled: false
             }
         }

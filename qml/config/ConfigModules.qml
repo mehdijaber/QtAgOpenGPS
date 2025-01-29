@@ -127,8 +127,8 @@ Rectangle{
                 id: cboxIsHydOn
                 height: 130 * theme.scaleHeight
                 width: 170 * theme.scaleWidth
-                icon.source: prefix + "/images/SwitchOff.png"
-                iconChecked: prefix + "/images/SwitchOn.png"
+                icon.source: "../../images/SwitchOff.png"
+                iconChecked: "../../images/SwitchOn.png"
 
                 checkable: true
                 onClicked: unsaved.visible = true
@@ -145,7 +145,7 @@ Rectangle{
                 onValueChanged: unsaved.visible = true
             }
             Image{
-                source: prefix + "/images/Config/ConMa_LiftRaiseTime.png"
+                source: "../../images/Config/ConMa_LiftRaiseTime.png"
                 width: 200 * theme.scaleWidth
                 height: 200 * theme.scaleHeight
                 fillMode: Image.Stretch
@@ -174,7 +174,7 @@ Rectangle{
                 onValueChanged: unsaved.visible = true
             }
             Image{
-                source: prefix + "/images/Config/ConMa_LiftLowerTime.png"
+                source: "../../images/Config/ConMa_LiftLowerTime.png"
                 width: 200 * theme.scaleWidth
                 height: 200 * theme.scaleHeight
                 fillMode: Image.Stretch
@@ -190,7 +190,7 @@ Rectangle{
         anchors.bottomMargin: 10 * theme.scaleHeight
         anchors.leftMargin: 10 * theme.scaleWidth
         anchors.rightMargin: 10 * theme.scaleWidth
-        icon.source: prefix + "/images/Config/ConSt_InvertRelay.png"
+        icon.source: "../../images/Config/ConSt_InvertRelay.png"
         checkable: true
         enabled: cboxIsHydOn.checked
         onClicked: unsaved.visible = true
@@ -261,7 +261,7 @@ Rectangle{
             anchors.bottomMargin: 20 * theme.scaleHeight
             anchors.rightMargin: 20 * theme.scaleWidth
             anchors.bottom: parent.bottom
-            icon.source: prefix + "/images/ToolAcceptChange.png"
+            icon.source: "../../images/ToolAcceptChange.png"
             onClicked: { save_settings() ; unsaved.visible = false }
 
             Text{
@@ -280,7 +280,7 @@ Rectangle{
             anchors.rightMargin: modulesSaveLabel.width + 5
             anchors.verticalCenter: modulesSave.verticalCenter
             visible: false
-            source: prefix + "/images/Config/ConSt_Mandatory.png"
+            source: "../../images/Config/ConSt_Mandatory.png"
             fillMode: Image.Stretch
         }
     }

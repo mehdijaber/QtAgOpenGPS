@@ -44,24 +44,24 @@ Window{
         SteerConfigTopButtons{
 			id: sensorsBtn
             buttonText: "Sensors"
-            icon.source: prefix + "/images/Config/ConD_Speedometer.png"
+            icon.source: "../../images/Config/ConD_Speedometer.png"
             implicitWidth: parent.width /4 -4
             checked: true //because one has to be to start things off
         }
         SteerConfigTopButtons{
 			id: configBtn
 			buttonText: "Config"
-            icon.source: prefix + "/images/Config/ConS_Pins.png"
+            icon.source: "../../images/Config/ConS_Pins.png"
         }
         SteerConfigTopButtons{
 			id: settingsBtn
 			buttonText: "Settings"
-            icon.source: prefix + "/images/Config/ConS_ImplementConfig.png"
+            icon.source: "../../images/Config/ConS_ImplementConfig.png"
         }
         SteerConfigTopButtons{
 			id: steerSettingsBtn
 			buttonText: "Steer Settings"
-            icon.source: prefix + "/images/Config/ConS_ImplementConfig.png"
+            icon.source: "../../images/Config/ConS_ImplementConfig.png"
         }
 	}
 	Item{
@@ -344,7 +344,7 @@ Window{
                 width: parent.width
                 IconButtonColor{
                     id: cboxEncoder
-                    icon.source: prefix + "/images/Config/ConSt_TurnSensor.png"
+                    icon.source: "../../images/Config/ConSt_TurnSensor.png"
                     checkable: true
                     buttonText: "Count Sensor"
                     Layout.alignment: Qt.AlignCenter
@@ -353,7 +353,7 @@ Window{
                 }
                 IconButtonColor{
                     id: cboxPressureSensor
-                    icon.source: prefix + "/images/Config/ConSt_TurnSensorPressure.png"
+                    icon.source: "../../images/Config/ConSt_TurnSensorPressure.png"
                     checkable: true
                     buttonText: "Pressure Turn Sensor"
                     Layout.alignment: Qt.AlignCenter
@@ -361,7 +361,7 @@ Window{
                 }
                 IconButtonColor{
                     id: cboxCurrentSensor
-                    icon.source: prefix + "/images/Config/ConSt_TurnSensorCurrent.png"
+                    icon.source: "../../images/Config/ConSt_TurnSensorCurrent.png"
                     checkable: true
                     buttonText: "Current Turn Sensor"
                     Layout.alignment: Qt.AlignCenter
@@ -448,7 +448,7 @@ Window{
                 flow: Grid.TopToBottom
                 IconButtonColor{
                     id: cboxDanfoss
-                    icon.source: prefix + "/images/Config/ConST_Danfoss.png"
+                    icon.source: "../../images/Config/ConST_Danfoss.png"
                     checkable: true
                     buttonText: "Danfoss"
                     Layout.alignment: Qt.AlignCenter
@@ -456,7 +456,7 @@ Window{
                 }
                 IconButtonColor{
                     id: chkInvertWAS
-                    icon.source: prefix + "/images/Config/ConSt_InvertWAS.png"
+                    icon.source: "../../images/Config/ConSt_InvertWAS.png"
                     checkable: true
                     Layout.alignment: Qt.AlignCenter
                     buttonText: "Invert WAS"
@@ -464,7 +464,7 @@ Window{
                 }
                 IconButtonColor{
                     id: chkInvertSteer
-                    icon.source: prefix + "/images/Config/ConSt_InvertDirection.png"
+                    icon.source: "../../images/Config/ConSt_InvertDirection.png"
                     checkable: true
                     buttonText: "Invert Motor Dir"
                     Layout.alignment: Qt.AlignCenter
@@ -472,7 +472,7 @@ Window{
                 }
                 IconButtonColor{
                     id: chkSteerInvertRelays
-                    icon.source: prefix + "/images/Config/ConSt_InvertRelay.png"
+                    icon.source: "../../images/Config/ConSt_InvertRelay.png"
                     checkable: true
                     buttonText: "Invert Relays"
                     Layout.alignment: Qt.AlignCenter
@@ -593,15 +593,15 @@ Window{
                         checkable: true
                         onCheckedChanged: settings.setMenu_isPureOn = checked
                         colorChecked: "white"
-                        icon.source: prefix + "/images/ModeStanley.png"
-                        iconChecked: prefix + "/images/ModePurePursuit.png"
+                        icon.source: "../../images/ModeStanley.png"
+                        iconChecked: "../../images/ModePurePursuit.png"
                     }
                     IconButtonColor {
                         text: qsTr("Steer In Reverse?")
                         isChecked: settings.setAS_isSteerInReverse
                         checkable: true
                         onCheckedChanged: settings.setAS_isSteerInReverse = checked
-                        icon.source: prefix + "/images/Config/ConV_RevSteer.png"
+                        icon.source: "../../images/Config/ConV_RevSteer.png"
                     }
                 }
             }
@@ -629,7 +629,7 @@ Window{
 
                         Image {
                             id: lightbarimage
-                            source: prefix + "/images/Config/ConV_CmPixel.png"
+                            source: "../../images/Config/ConV_CmPixel.png"
                             anchors.left: parent.left
                             anchors.top: lightbartitletxt.bottom
                             anchors.bottom: parent.bottom
@@ -658,8 +658,8 @@ Window{
                 anchors.bottomMargin: 20 * theme.scaleHeight
                 anchors.leftMargin: 20 * theme.scaleWidth
                 anchors.rightMargin: 20 * theme.scaleWidth
-                icon.source: prefix + "/images/AutoSteerOff.png"
-                iconChecked: prefix + "/images/AutoSteerOn.png"
+                icon.source: "../../images/AutoSteerOff.png"
+                iconChecked: "../../images/AutoSteerOn.png"
                 checkable: true
                 color: "red"
                 isChecked: settings.setAS_isAutoSteerAutoOn
@@ -692,7 +692,7 @@ Window{
 
                 Image {
                     id: linewidthimage
-                    source: prefix + "/images/Config/ConV_LineWith.png"
+                    source: "../../images/Config/ConV_LineWith.png"
                     anchors.left: parent.left
                     anchors.top: linewidthtitletxt.bottom
                     anchors.bottom: parent.bottom
@@ -733,7 +733,7 @@ Window{
 
                 Image {
                     id: nudgedistimage
-                    source: prefix + "/images/Config/ConV_SnapDistance.png"
+                    source: "../../images/Config/ConV_SnapDistance.png"
                     anchors.left: parent.left
                     anchors.top: nudgedisttitletxt.bottom
                     anchors.bottom: parent.bottom
@@ -774,7 +774,7 @@ Window{
 
                 Image {
                     id: lineacqLAheadimage
-                    source: prefix + "/images/Config/ConV_GuidanceLookAhead.png"
+                    source: "../../images/Config/ConV_GuidanceLookAhead.png"
                     anchors.left: parent.left
                     anchors.top: lineacqLAheadtitletxt.bottom
                     anchors.bottom: parent.bottom
@@ -811,7 +811,7 @@ Window{
                 columns: 4
                 Text{ text: qsTr("Manual Turns Limit"); Layout.alignment: Qt.AlignCenter}
                 Image{
-                    source: prefix + "/images/Config/con_VehicleFunctionSpeedLimit.png"
+                    source: "../../images/Config/con_VehicleFunctionSpeedLimit.png"
                     width: parent.width
                     height: 90 * theme.scaleHeight
                     Layout.alignment: Qt.AlignCenter
@@ -829,7 +829,7 @@ Window{
                 Text{ text: qsTr("Min AutoSteer Speed"); Layout.alignment: Qt.AlignCenter}
                 Image{
                     id: minAutoSteerImage
-                    source: prefix + "/images/Config/ConV_MinAutoSteer.png"
+                    source: "../../images/Config/ConV_MinAutoSteer.png"
                     width: parent.width
                     height: 90 * theme.scaleHeight
                     Layout.alignment: Qt.AlignCenter
@@ -847,7 +847,7 @@ Window{
                 Text{ text: qsTr("Max AutoSteer Speed"); Layout.alignment: Qt.AlignCenter}
                 Image{
                     id: maxAutoSteerImage
-                    source: prefix + "/images/Config/ConV_MaxAutoSteer.png"
+                    source: "../../images/Config/ConV_MaxAutoSteer.png"
                     height: 90 * theme.scaleHeight
                     width: parent.width
                     Layout.alignment: Qt.AlignCenter
@@ -864,7 +864,7 @@ Window{
                 Text{ text: qsTr(utils.speed_unit()); Layout.alignment: Qt.AlignCenter}
                 Text{ text: qsTr("Max Turn Rate"); Layout.alignment: Qt.AlignCenter}
                 Image{
-                    source: prefix + "/images/Config/ConV_MaxAngVel.png"
+                    source: "../../images/Config/ConV_MaxAngVel.png"
                     width: parent.width
                     height: 90 * theme.scaleHeight
                     Layout.alignment: Qt.AlignCenter
@@ -897,14 +897,14 @@ Window{
         IconButtonText{
             id: wizard
             text: qsTr("Wizard")
-            icon.source: prefix + "/images/WizardWand.png"
+            icon.source: "../../images/WizardWand.png"
             Layout.alignment: Qt.AlignCenter
             visible: false //TODO: because the wizard isn't implemented
         }
         IconButtonText{
             id: reset
             text: qsTr("Reset All To Defaults")
-            icon.source: prefix + "/images/Reset_Default.png"
+            icon.source: "../../images/Reset_Default.png"
             Layout.alignment: Qt.AlignCenter
             onClicked: {
                 steerMessageDialog.close()
@@ -928,7 +928,7 @@ Window{
         IconButton{
             id: send
             Layout.alignment: Qt.AlignLeft
-            icon.source: prefix + "/images/ToolAcceptChange.png"
+            icon.source: "../../images/ToolAcceptChange.png"
             implicitWidth: 130
             onClicked: { settingsArea.save_settings() ; unsaved.visible = false }
         }
@@ -940,7 +940,7 @@ Window{
         anchors.rightMargin: 10 * theme.scaleWidth
         anchors.verticalCenter: bottomRightButtons.verticalCenter
         visible: false
-        source: prefix + "/images/Config/ConSt_Mandatory.png"
+        source: "../../images/Config/ConSt_Mandatory.png"
     }
 
     MessageDialog{

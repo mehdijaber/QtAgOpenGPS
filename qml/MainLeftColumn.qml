@@ -56,31 +56,32 @@ ColumnLayout {
     Comp.MainWindowBtns {
         id: btnnavigationSettings
         buttonText: qsTr("Display")
-        icon.source: prefix + "/images/NavigationSettings.png"
+        icon.source: "../../images/NavigationSettings.png"
         onClicked: displayButtons.visible = !displayButtons.visible
     }
     Comp.MainWindowBtns {
         id: btnSettings
         buttonText: qsTr("Settings")
-        icon.source: prefix + "/images/Settings48.png"
+        icon.source: "../../images/Settings48.png"
         onClicked: config.open()
     }
     Comp.MainWindowBtns {
         id: btnTools
+        visible: true
         buttonText: qsTr("Tools")
-        icon.source: prefix + "/images/SpecialFunctions.png"
+        icon.source: "../../images/SpecialFunctions.png"
         onClicked: toolsMenu.visible = true
     }
     Comp.MainWindowBtns{
         id: btnFieldMenu
         buttonText: qsTr("Field")
-        icon.source: prefix + "/images/JobActive.png"
+        icon.source: "../../images/JobActive.png"
         onClicked: fieldMenu.visible = true
     }
     Comp.MainWindowBtns{
         id: btnFieldTools
         buttonText: qsTr("Field Tools")
-        icon.source: prefix + "/images/FieldTools.png"
+        icon.source: "../../images/FieldTools.png"
         onClicked: fieldTools.visible = true
         enabled: aog.isJobStarted ? true : false
     }
@@ -88,12 +89,12 @@ ColumnLayout {
     Comp.MainWindowBtns {
         id: btnAgIO
         buttonText: qsTr("AgIO")
-        icon.source: prefix + "/images/AgIO.png"
+        icon.source: "../../images/AgIO.png"
     }
     Comp.MainWindowBtns {
         id: btnautoSteerConf
         buttonText: qsTr("Steer config")
-        icon.source: prefix + "/images/AutoSteerConf.png"
+        icon.source: "../../images/AutoSteerConf.png"
         onClicked: {
             steerConfigWindow.visible = true
             steerConfigWindow.show()

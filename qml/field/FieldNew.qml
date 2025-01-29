@@ -81,7 +81,7 @@ Dialog {
         IconButtonTransparent{
             objectName: "btnAddDate"
             id: marker
-            icon.source: prefix + "/images/JobNameCalendar.png"
+            icon.source: "../../images/JobNameCalendar.png"
             Text{
                 anchors.right: parent.left
                 anchors.verticalCenter: parent.verticalCenter
@@ -95,7 +95,7 @@ Dialog {
         }
         IconButtonTransparent{
             objectName: "btnAddTime"
-            icon.source: prefix + "/images/JobNameTime.png"
+            icon.source: "../../images/JobNameTime.png"
             Text{
                 anchors.right: parent.left
                 anchors.verticalCenter: parent.verticalCenter
@@ -121,12 +121,12 @@ Dialog {
                 fieldNew.visible = false
                 newField.text = ""
             }
-            icon.source: prefix + "/images/Cancel64.png"
+            icon.source: "../../images/Cancel64.png"
         }
         IconButtonTransparent{
             enabled: newField.text !== "" && errorMessage.visible === false;
             objectName: "btnSave"
-            icon.source: prefix + "/images/OK64.png"
+            icon.source: "../../images/OK64.png"
 
             onClicked: {
                 fieldNew.visible = false

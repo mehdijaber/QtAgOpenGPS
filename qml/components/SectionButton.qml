@@ -18,7 +18,7 @@ Image {
             name: "on"
             PropertyChanges {
                 target: image
-                source: prefix + "images/SectionOn.png"
+                source:"../../images/SectionOn.png"
             }
         },
         State {
@@ -26,14 +26,14 @@ Image {
 
             PropertyChanges {
                 target: image
-                source: prefix + "images/SectionAuto.png"
+                source:"../../images/SectionAuto.png"
             }
         },
         State {
             name: "off"
             PropertyChanges {
                 target: image
-                source: prefix + "images/SectionOff.png"
+                source:"../../images/SectionOff.png"
             }
         }
     ]

@@ -126,38 +126,38 @@ Item {
     //as far as I can tell, these are all necessary
     SoundEffect{
         id: engage
-        source: prefix + "/sounds/SteerOn.wav"
+        source: "../sounds/SteerOn.wav"
     }
     SoundEffect{
         id: disEngage
-        source: prefix + "/sounds/SteerOff.wav"
+        source: "../sounds/SteerOff.wav"
     }
     SoundEffect{
         id: hydDown
-        source: prefix + "/sounds/HydDown.wav"
+        source: "../sounds/HydDown.wav"
     }
     SoundEffect{
         id: hydUp
-        source: prefix + "/sounds/HydUp.wav"
+        source: "../sounds/HydUp.wav"
     }
     SoundEffect{
         id: sectionOff
-        source: prefix + "/sounds/SectionOff.wav"
+        source: "../sounds/SectionOff.wav"
     }
     SoundEffect{
         id: sectionOn
-        source: prefix + "/sounds/SectionOn.wav"
+        source: "../sounds/SectionOn.wav"
     }
     SoundEffect{
         id: approachingYouTurn
-        source: prefix + "/sounds/Alarm10.wav"
+        source: "../sounds/Alarm10.wav"
     }
     SoundEffect{
         id: rtkLost
-        source: prefix + "/sounds/rtk_lost.wav"
+        source: "../sounds/rtk_lost.wav"
     }
     SoundEffect{
         id: youturnFail
-        source: prefix + "/sounds/TF012.wav"
+        source: "../sounds/TF012.wav"
     }//endregion sounds
 }

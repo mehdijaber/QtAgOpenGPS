@@ -75,12 +75,12 @@ Item {
                     enabled: (boundaryList.currentIndex === 0 &&
                               boundaryInterface.boundary_list.length === 1) ||
                              (boundaryList.currentIndex > 0)
-                    icon.source: prefix + "/images/BoundaryDelete.png"
+                    icon.source: "../../images/BoundaryDelete.png"
                     onClicked: boundaryInterface.delete_boundary(boundaryList.currentIndex)
                 }
                 IconButtonTransparent{
                     objectName: "btnBoundaryDeleteAll"
-                    icon.source: prefix + "/images/BoundaryDeleteAll.png"
+                    icon.source: "../../images/BoundaryDeleteAll.png"
                     onClicked: {
                         deleteAllSure.visible = true
                     }
@@ -89,14 +89,14 @@ Item {
                 }
                 IconButtonTransparent{
                     objectName: "btnBoundaryOpenGE"
-                    icon.source: prefix + "/images/GoogleEarth.png"
+                    icon.source: "../../images/GoogleEarth.png"
                 }
                 IconButtonTransparent{
                     objectName: "btnBoundaryFancyDrawer"
-                    icon.source: prefix + "/images/bing.png"
+                    icon.source: "../../images/bing.png"
                 }
                 IconButtonTransparent{
-                    icon.source: prefix + "/images/AddNew.png"
+                    icon.source: "../../images/AddNew.png"
                     onClicked: {
                         boundaryMenuPopup.visible = false
                         boundaryType.show()
@@ -104,7 +104,7 @@ Item {
 
                 }
                 IconButtonTransparent{
-                    icon.source: prefix + "/images/OK64.png"
+                    icon.source: "../../images/OK64.png"
                     onClicked: boundaryMenuPopup.visible = false
                 }
             }

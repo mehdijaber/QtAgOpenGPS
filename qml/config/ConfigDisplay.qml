@@ -29,7 +29,7 @@ Item {
             DisplayAndFeaturesBtns{
                 id: fieldTexture
                 text: qsTr("Field Texture")
-                icon.source: prefix + "/images/Config/ConD_FloorTexture.png"
+                icon.source: "../../images/Config/ConD_FloorTexture.png"
                 isChecked: settings.setDisplay_isTextureOn
                 onCheckedChanged: settings.setDisplay_isTextureOn = checked
             }
@@ -38,73 +38,73 @@ Item {
                 isChecked: settings.setDisplay_isAutoDayNight
                 onCheckedChanged: settings.setDisplay_isAutoDayNight = !checked
                 text: qsTr("Auto Day Night")
-                icon.source: prefix + "/images/Config/ConD_AutoDayNight.png"
+                icon.source: "../../images/Config/ConD_AutoDayNight.png"
             }
             DisplayAndFeaturesBtns{
                 id:startFullScreen
                 text: qsTr("Start FullScreen")
-                icon.source: prefix + "/images/Config/ConD_FullScreenBegin.png"
+                icon.source: "../../images/Config/ConD_FullScreenBegin.png"
                 isChecked: settings.setDisplay_isStartFullScreen
                 onCheckedChanged: settings.setDisplay_isStartFullScreen = checked
             }
             DisplayAndFeaturesBtns{
                 id:grid
                 text: qsTr("Grid")
-                icon.source: prefix + "/images/Config/ConD_Grid.png"
+                icon.source: "../../images/Config/ConD_Grid.png"
                 isChecked: settings.setMenu_isGridOn
                 onCheckedChanged: settings.setMenu_isGridOn = checked
             }
             DisplayAndFeaturesBtns{
                 id:sky
                 text:qsTr("Sky")
-                icon.source: prefix + "/images/Config/ConD_Sky.png"
+                icon.source: "../../images/Config/ConD_Sky.png"
                 isChecked: settings.setMenu_isSkyOn
                 onCheckedChanged: settings.setMenu_isSkyOn = checked
             }
             DisplayAndFeaturesBtns{
                 id:brightness
                 text:qsTr("Brightness")
-                icon.source: prefix + "/images/BrightnessUp.png"
+                icon.source: "../../images/BrightnessUp.png"
                 isChecked: settings.setDisplay_isBrightnessOn
                 onCheckedChanged: settings.setDisplay_isBrightnessOn = checked
             }
             DisplayAndFeaturesBtns{
                 id:lightBar
                 text:qsTr("Lightbar")
-                icon.source: prefix + "/images/Config/ConD_LightBar.png"
+                icon.source: "../../images/Config/ConD_LightBar.png"
                 isChecked: settings.setMenu_isLightbarOn
                 onCheckedChanged: settings.setMenu_isLightbarOn = checked
             }
             DisplayAndFeaturesBtns{
                 id:logNMEA
                 text: qsTr("Log NMEA")
-                icon.source: prefix + "/images/Config/ConD_LogNMEA.png"
+                icon.source: "../../images/Config/ConD_LogNMEA.png"
             }
             DisplayAndFeaturesBtns{
                 id: guideLines
                 text: qsTr("GuideLines")
-                icon.source: prefix + "/images/Config/ConD_ExtraGuides.png"
+                icon.source: "../../images/Config/ConD_ExtraGuides.png"
                 isChecked: settings.setMenu_isSideGuideLines
                 onCheckedChanged: settings.setMenu_isSideGuideLines = checked
             }
             DisplayAndFeaturesBtns{
                 id:svennArrow
                 text: qsTr("Svenn Arrow")
-                icon.source: prefix + "/images/SvennArrow.png"
+                icon.source: "../../images/SvennArrow.png"
                 isChecked: settings.setDisplay_isSvennArrowOn
                 onCheckedChanged: settings.setDisplay_isSvennArrowOn
             }
             DisplayAndFeaturesBtns{
                 id: compass
                 text: qsTr("Compass")
-                icon.source: prefix + "/images/Images/z_Compass.png"
+                icon.source: "../../images/z_Compass.png"
                 isChecked: settings.setMenu_isCompassOn
                 onCheckedChanged: settings.setMenu_isCompassOn
             }
             /*DisplayAndFeaturesBtns{ //appears there is no setting for this
                 id: speedo
                 text: qsTr("Speedometer")
-                icon.source: prefix + "/images/Images/z_Speedo.png"
+                icon.source: "../../images/z_Speedo.png"
                 isChecked: settings.setMenu_isSpeedoOn
                 onCheckedChanged: settings.setMenu_isSpeedoOn
             }*/
@@ -128,7 +128,7 @@ Item {
 
             IconButtonColor{
                 id:metric
-                icon.source: prefix + "/images/Config/ConD_Metric.png"
+                icon.source: "../../images/Config/ConD_Metric.png"
                 //text: qsTr("Metric")
                 property bool settingsChecked: settings.setMenu_isMetric
                 checkable: true
@@ -137,7 +137,7 @@ Item {
             }
             IconButtonColor{
                 id:imperial
-                icon.source: prefix + "/images/Config/ConD_Imperial.png"
+                icon.source: "../../images/Config/ConD_Imperial.png"
                 text: ""
                 checkable: true
                 isChecked: !settings.setMenu_isMetric

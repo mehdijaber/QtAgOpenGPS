@@ -36,11 +36,11 @@ Comp.MoveablePopup {
                     Layout.alignment: Qt.AlignCenter
                     implicitWidth: parent.width
                     Comp.IconButtonTransparent{
-                        icon.source: prefix + "/images/SnapLeftHalf.png"
+                        icon.source: "../../images/SnapLeftHalf.png"
                         Layout.alignment: Qt.AlignLeft
                     }
                     Comp.IconButtonTransparent{
-                        icon.source: prefix + "/images/SnapRightHalf.png"
+                        icon.source: "../../images/SnapRightHalf.png"
                         Layout.alignment: Qt.AlignRight
                     }
                 }
@@ -48,11 +48,11 @@ Comp.MoveablePopup {
                     Layout.alignment: Qt.AlignCenter
                     implicitWidth: parent.width
                     Comp.IconButtonTransparent{
-                        icon.source: prefix + "/images/SnapLeft.png"
+                        icon.source: "../../images/SnapLeft.png"
                         Layout.alignment: Qt.AlignLeft
                     }
                     Comp.IconButtonTransparent{
-                        icon.source: prefix + "/images/SnapRight.png"
+                        icon.source: "../../images/SnapRight.png"
                         Layout.alignment: Qt.AlignRight
                     }
                 }
@@ -76,12 +76,12 @@ Comp.MoveablePopup {
             anchors.bottom: parent.bottom
             anchors.bottomMargin: 15
             Comp.IconButtonTransparent{
-                icon.source: prefix + "/images/Cancel64.png"
+                icon.source: "../../images/Cancel64.png"
                 onClicked: refNudge.visible = false
                 Layout.alignment: Qt.AlignCenter
             }
             Comp.IconButtonTransparent{
-                icon.source: prefix + "/images/OK64.png"
+                icon.source: "../../images/OK64.png"
                 onClicked: refNudge.visible = false
                 Layout.alignment: Qt.AlignCenter
             }

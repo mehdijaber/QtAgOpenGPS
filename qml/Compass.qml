@@ -14,7 +14,7 @@ Rectangle
     Image {
         id: rootImage
         anchors.fill: parent
-        source: prefix + "/images/textures/Compass.png"
+        source: "../../images/textures/Compass.png"
 
         fillMode: Image.PreserveAspectCrop
 
@@ -34,7 +34,7 @@ Rectangle
     }
     Image {
         id: needle
-        source: prefix + "/images/UpArrow64.png"
+        source: "../../images/UpArrow64.png"
         width: 35
         height: 35
         anchors.horizontalCenter: parent.horizontalCenter
