@@ -126,8 +126,6 @@ endif()
 qt_add_executable(QtAgOpenGPS
     main.cpp
     $<$<NOT:$<BOOL:${LOCAL_QML}>>:agopengps.qrc>
-    aogrenderer.cpp
-    aogrenderer.h
     aogrenderer.cpp aogrenderer.h # moved renderer in here
     aogproperties.cpp
     aogproperty.h aogproperty.cpp
