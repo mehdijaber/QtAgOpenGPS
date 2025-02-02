@@ -214,15 +214,23 @@ set(qml_interfaces_singletons
     qml/interfaces/TracksInterface.qml
 )
 
+# Set the singleton property on the QML file
+set_source_files_properties(${qml_interfaces_singletons}
+    PROPERTIES QT_QML_SINGLETON_TYPE TRUE
+)
+
 #Add the QML module
 qt_add_qml_module(QtAgOpenGPS
     URI AOG
     VERSION 1.0
     QML_FILES ${qml_interfaces_singletons}
+    RESOURCE_PREFIX "/"
+    OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/qml/AOG
     SOURCES
         aogrenderer.cpp
         aogrenderer.h
 )
+
 
 if(NOT ANDROID)
     set_target_properties(QtAgOpenGPS PROPERTIES
