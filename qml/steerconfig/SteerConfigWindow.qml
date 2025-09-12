@@ -507,6 +507,12 @@ Drawer {
     Timer {
         id: sendUdptimer
         interval: 1000;
-        onTriggered:  aog.modules_send_252()
+        onTriggered: function(){
+            try{
+                aog.modules_send_252()
+            }catch (error){
+                console.error(error);
+            }
+        }
     }
 }

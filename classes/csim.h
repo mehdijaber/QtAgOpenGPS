@@ -23,7 +23,7 @@ public:
     double headingTrue, stepDistance = 0.0, steerAngle, steerangleAve = 0.0;
     double steerAngleScrollBar = 0;
 
-    bool isAccelForward, isAccelBack;
+    bool isAccelForward, isAccelBack = false;
 
     explicit CSim(QObject *parent = 0);
 

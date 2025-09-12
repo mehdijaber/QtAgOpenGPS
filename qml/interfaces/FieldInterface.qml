@@ -12,6 +12,7 @@ Item {
     signal field_new(string field_name)
     signal field_open(string field_name)
     signal field_new_from(string existing_field, string new_field, int flags)
+    signal field_new_from_KML(string field_name, string file_name)
     signal field_close()
     signal field_delete(string field_name)
 

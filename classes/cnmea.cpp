@@ -29,11 +29,11 @@ void CNMEA::AverageTheSpeed()
 void CNMEA::SetLocalMetersPerDegree()
 {
     mPerDegreeLat = 111132.92 - 559.82 * cos(2.0 * (double)latStart * 0.01745329251994329576923690766743) + 1.175
-                                                                                                                 * cos(4.0 * (double)latStart * 0.01745329251994329576923690766743) - 0.0023
+                          * cos(4.0 * (double)latStart * 0.01745329251994329576923690766743) - 0.0023
                           * cos(6.0 * (double)latStart * 0.01745329251994329576923690766743);
 
     mPerDegreeLon = 111412.84 * cos((double)latStart * 0.01745329251994329576923690766743) - 93.5
-                                                                                                  * cos(3.0 * (double)latStart * 0.01745329251994329576923690766743) + 0.118
+                          * cos(3.0 * (double)latStart * 0.01745329251994329576923690766743) + 0.118
                           * cos(5.0 * (double)latStart * 0.01745329251994329576923690766743);
 
     double northing, easting;

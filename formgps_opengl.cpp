@@ -416,16 +416,17 @@ void FormGPS::oglMain_Paint()
             //Direct line to flag if flag selected
             if (flagNumberPicked > 0)
             {
-
-                gldraw1.clear();
-                gl->glLineWidth(2);
-                //TODO: implement with shader: GL.LineStipple(1, 0x0707);
-                gldraw1.append(QVector3D(vehicle.pivotAxlePos.easting, vehicle.pivotAxlePos.northing, 0));
-                gldraw1.append(QVector3D(flagPts[flagNumberPicked-1].easting, flagPts[flagNumberPicked-1].northing, 0));
-                gldraw1.draw(gl, projection*modelview,
-                             QColor::fromRgbF(0.930f, 0.72f, 0.32f),
-                             GL_LINES, lineWidth);
-                gl->glLineWidth(1);
+                if (flagPts.count() > flagNumberPicked) {
+                    gldraw1.clear();
+                    //TODO: implement with shader: GL.LineStipple(1, 0x0707);
+                    gldraw1.append(QVector3D(vehicle.pivotAxlePos.easting, vehicle.pivotAxlePos.northing, 0));
+                    gldraw1.append(QVector3D(flagPts[flagNumberPicked-1].easting, flagPts[flagNumberPicked-1].northing, 0));
+                    gldraw1.draw(gl, projection*modelview,
+                                QColor::fromRgbF(0.930f, 0.72f, 0.32f),
+                                GL_LINES, lineWidth);
+                } else {
+                    flagNumberPicked = 0;//reset
+                }
             }
 
             //draw the vehicle/implement

@@ -110,6 +110,9 @@ Popup {
                 ListElement { timeout: 5000; title: "Hi"; message: "Message8" }
                 ListElement { timeout: 6000; title: "Hi"; message: "Message9" }
                 */
+                Component.onDestruction: {
+                    console.log("timedMessageModel destroyed")
+                }
             }
 
             focus: true
@@ -118,6 +121,9 @@ Popup {
 
             Component.onCompleted: function() {
                 timedMessageListView.positionViewAtEnd()
+            }
+            Component.onDestruction: {
+                console.log("timedMessageListView destroyed")
             }
         }
 
