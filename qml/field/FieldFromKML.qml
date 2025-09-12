@@ -68,33 +68,7 @@ Dialog{
             color: "red"
             visible: false
             text: qsTr("This field exists already; please choose another name.")
-        TextField{
-            id: newField
-            anchors.left: parent.left
-            anchors.right: parent.right
-            anchors.top: newFieldLabel.bottom
-            height: 50
-            selectByMouse: true
-            placeholderText: focus || text ? "" : "New Field Name"
-            onTextChanged: {
-                for (var i=0; i < fieldInterface.field_list.length ; i++) {
-                    if (text === fieldInterface.field_list[i].name) {
-                        errorMessage.visible = true
-                        break
-                    } else
-                        errorMessage.visible = false
-                    
-                }
-            }
-        }
-        Text {
-            id: errorMessage
-            anchors.top: newField.bottom
-            anchors.left: newField.left
-            color: "red"
-            visible: false
-            text: qsTr("This field exists already; please choose another name.")
-        }
+
         }
     }
 
