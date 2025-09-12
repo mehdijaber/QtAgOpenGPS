@@ -85,7 +85,6 @@ Dialog {
             icon.source: prefix + "/images/JobNameCalendar.png"
             Text{
                 rightPadding: 10
-                rightPadding: 10
                 anchors.right: parent.left
                 anchors.verticalCenter: parent.verticalCenter
                 text: "+"
@@ -103,7 +102,6 @@ Dialog {
             objectName: "btnAddTime"
             icon.source: prefix + "/images/JobNameTime.png"
             Text{
-                rightPadding: 10
                 rightPadding: 10
                 anchors.right: parent.left
                 anchors.verticalCenter: parent.verticalCenter
