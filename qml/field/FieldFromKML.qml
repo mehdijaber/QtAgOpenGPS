@@ -37,7 +37,6 @@ Dialog{
         border.width: 1
         Text {
             id: newFieldLabel
-            id: newFieldLabel
             anchors.left: parent.left
             anchors.bottom: parent.top
             font.bold: true
@@ -84,6 +83,7 @@ Dialog{
                         break
                     } else
                         errorMessage.visible = false
+                    
                 }
             }
         }
@@ -95,7 +95,9 @@ Dialog{
             visible: false
             text: qsTr("This field exists already; please choose another name.")
         }
+        }
     }
+
     Row{
         id: additives
         anchors.left: parent.left
@@ -108,7 +110,6 @@ Dialog{
             icon.source: prefix + "/images/JobNameCalendar.png"
             Text{
                 rightPadding: 10
-                rightPadding: 10
                 anchors.right: parent.left
                 anchors.verticalCenter: parent.verticalCenter
                 text: "+"
@@ -120,13 +121,7 @@ Dialog{
                 var day = String(date.getDate()).padStart(2, '0');
                 newField.text += " " + `${year}-${month}-${day}`
             }
-            onClicked: {
-                var date = new Date();
-                var year = date.getFullYear();
-                var month = String(date.getMonth() + 1).padStart(2, '0');
-                var day = String(date.getDate()).padStart(2, '0');
-                newField.text += " " + `${year}-${month}-${day}`
-            }
+
         }
         IconButtonTransparent{
             objectName: "btnAddTime"
