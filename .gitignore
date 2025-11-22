@@ -47,3 +47,14 @@ project.json.qtds
 .vs/qtagio/v17/DocumentLayout.json
 .vs/qtagio/v17/workspaceFileList.bin
 .claude/settings.local.json
+
+# Work documentation (personal workspace)
+work_doc/
+
+# Claude Code configuration
+.claude/
+CLAUDE.md
+
+# Development tools
+heob/
+android/.gradle/
