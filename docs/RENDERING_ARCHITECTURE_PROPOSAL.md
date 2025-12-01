@@ -676,11 +676,295 @@ Key metrics:
 
 ---
 
+## Appendix C: Complete Qt Rendering Options Comparison
+
+This appendix provides a comprehensive comparison of all Qt rendering options considered for QtAgOpenGPS.
+
+### C.1 Options Overview
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    QT RENDERING OPTIONS FOR QtAgOpenGPS                      │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐              │
+│  │   Qt Quick      │  │   Qt Quick      │  │   Qt Quick      │              │
+│  │   Canvas        │  │   Shapes        │  │   3D            │              │
+│  │   (JavaScript)  │  │   (QML)         │  │   (QML)         │              │
+│  └────────┬────────┘  └────────┬────────┘  └────────┬────────┘              │
+│           │                    │                    │                        │
+│           ▼                    ▼                    ▼                        │
+│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐              │
+│  │  Texture Upload │  │ CPU Triangula-  │  │ Full 3D Engine  │              │
+│  │  Every Frame    │  │ tion + Scene    │  │ PBR, Lighting   │              │
+│  │  (SLOW!)        │  │ Graph           │  │ (OVERKILL!)     │              │
+│  └─────────────────┘  └─────────────────┘  └─────────────────┘              │
+│                                                                              │
+│  ┌─────────────────┐  ┌─────────────────┐                                   │
+│  │  QSGGeometry    │  │  QSGRender      │                                   │
+│  │  Node           │  │  Node           │                                   │
+│  │  (C++)          │  │  (C++)          │                                   │
+│  └────────┬────────┘  └────────┬────────┘                                   │
+│           │                    │                                             │
+│           ▼                    ▼                                             │
+│  ┌─────────────────┐  ┌─────────────────┐                                   │
+│  │ Scene Graph     │  │ Direct OpenGL   │                                   │
+│  │ + Custom Mat.   │  │ Injection       │                                   │
+│  │ (OPTIMAL)       │  │ (RECOMMENDED)   │                                   │
+│  └─────────────────┘  └─────────────────┘                                   │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### C.2 Qt Quick Canvas - NOT SUITABLE
+
+```qml
+Canvas {
+    width: 800; height: 600
+    onPaint: {
+        var ctx = getContext("2d")
+        for (var patch of patches) {
+            ctx.beginPath()
+            ctx.moveTo(patch[0].x, patch[0].y)
+            // ... draw patch
+            ctx.fill()
+        }
+    }
+}
+```
+
+| Aspect | Assessment |
+|--------|------------|
+| **How it works** | JavaScript draws to texture, uploaded to GPU each frame |
+| **Custom projection matrix** | Not supported |
+| **Performance** | Poor |
+| **Android** | Bad - texture upload overhead |
+| **Qt Documentation Warning** | "large canvases, frequent updates, and animation should be avoided... each update will lead to a texture upload" |
+| **Verdict** | **NOT SUITABLE** for dynamic rendering |
+
+### C.3 Qt Quick Shapes - NOT SUITABLE
+
+```qml
+Shape {
+    ShapePath {
+        strokeWidth: 2
+        strokeColor: "green"
+        fillColor: "lightgreen"
+        PathPolyline { path: patchVertices }
+    }
+}
+```
+
+| Aspect | Assessment |
+|--------|------------|
+| **How it works** | QML declarative paths, CPU triangulation, scene graph rendering |
+| **Custom projection matrix** | Not supported - uses Qt's coordinate system |
+| **Performance** | Medium - CPU triangulation on every geometry change |
+| **Android** | Medium |
+| **Batching** | Partial (within same Shape item only) |
+| **Verdict** | **NOT SUITABLE** - no custom matrices, CPU overhead |
+
+### C.4 Qt Quick 3D - OVERKILL
+
+```qml
+import QtQuick3D
+
+View3D {
+    PerspectiveCamera {
+        position: Qt.vector3d(0, 200, 0)
+    }
+    DirectionalLight { }
+
+    Repeater3D {
+        model: patchesModel
+        Model {
+            geometry: CustomGeometry { }
+            materials: PrincipledMaterial {
+                baseColor: patchColor
+                lighting: PrincipledMaterial.NoLighting
+            }
+        }
+    }
+}
+```
+
+| Aspect | Assessment |
+|--------|------------|
+| **How it works** | Full 3D scene graph with PBR materials, lighting, shadows |
+| **Custom projection matrix** | Via Camera API - different from our current system |
+| **Performance** | Good but heavy footprint |
+| **Android** | Good but +20-50 MB RAM overhead |
+| **Verdict** | **OVERKILL** - we would disable 90% of features |
+
+**What Qt Quick 3D provides (unused by QtAgOpenGPS)**:
+- PBR Materials (metalness, roughness)
+- Dynamic lighting and shadows
+- 3D model loading (.gltf, .obj)
+- Environment maps and skyboxes
+- Screen Space Ambient Occlusion
+- Reflections and refractions
+
+**What QtAgOpenGPS actually needs**:
+- Flat colored triangles
+- Custom projection/modelview matrices
+- No lighting, no shadows
+- Depth testing disabled
+
+### C.5 QSGGeometryNode + Custom Material - OPTIMAL (Complex)
+
+```cpp
+class FieldMaterial : public QSGMaterial {
+public:
+    QMatrix4x4 m_projectionMatrix;
+    QMatrix4x4 m_modelViewMatrix;
+    QColor m_color;
+
+    QSGMaterialShader *createShader() const override {
+        return new FieldMaterialShader();
+    }
+};
+
+// In updatePaintNode()
+QSGGeometryNode *node = new QSGGeometryNode();
+node->setGeometry(patchGeometry);
+node->setMaterial(new FieldMaterial(proj, mv, color));
+```
+
+| Aspect | Assessment |
+|--------|------------|
+| **How it works** | Native scene graph with custom material and shaders |
+| **Custom projection matrix** | Yes - via custom QSGMaterial uniforms |
+| **Performance** | Optimal - automatic batching by material |
+| **Android** | Excellent - Vulkan via QRhi |
+| **Migration effort** | High - requires .qsb shader compilation |
+| **Verdict** | **OPTIMAL** but requires custom shaders |
+
+**Challenge**: Custom projection matrices require:
+1. Custom `QSGMaterial` subclass
+2. Custom `QSGMaterialShader` subclass
+3. GLSL shaders compiled to .qsb format via Qt shader tools
+
+### C.6 QSGRenderNode - RECOMMENDED FIRST STEP
+
+```cpp
+class FieldRenderNode : public QSGRenderNode {
+public:
+    void render(const RenderState *state) override {
+        QOpenGLFunctions *gl = QOpenGLContext::currentContext()->functions();
+
+        // Existing OpenGL code works directly
+        gl->glDisable(GL_DEPTH_TEST);
+        gl->glEnable(GL_BLEND);
+
+        // Custom matrices - no problem
+        QMatrix4x4 projection, modelview;
+        projection.perspective(fovy, aspect, near, far);
+        camera.SetWorldCam(modelview, easting, northing, heading);
+
+        // Draw patches with existing code
+        for (auto &strip : triStrip) {
+            for (auto &patch : strip.patchList) {
+                // ... existing drawing code
+            }
+        }
+    }
+
+    StateFlags changedStates() const override {
+        return BlendState | DepthState;
+    }
+};
+```
+
+| Aspect | Assessment |
+|--------|------------|
+| **How it works** | Injects raw OpenGL commands into scene graph render pass |
+| **Custom projection matrix** | Yes - full control with existing code |
+| **Performance** | Very good - no FBO overhead |
+| **Android** | Good - still OpenGL ES |
+| **Migration effort** | Low - reuse existing oglMain_Paint() code |
+| **Automatic batching** | No (manual) |
+| **Verdict** | **RECOMMENDED** as first migration step |
+
+### C.7 Complete Comparison Matrix
+
+| Option | Custom MVP | Dynamic Geometry | Performance | Android | Effort | Suitable |
+|--------|-----------|------------------|-------------|---------|--------|----------|
+| Qt Quick Canvas | No | Poor | Poor | Bad | Low | No |
+| Qt Quick Shapes | No | Medium | Medium | Medium | Low | No |
+| Qt Quick 3D | Via API | Good | Good | Heavy | Medium | No (overkill) |
+| QSGGeometryNode | Yes (shaders) | Excellent | Optimal | Excellent | High | Yes |
+| **QSGRenderNode** | **Yes (direct)** | **Very Good** | **Very Good** | **Good** | **Low** | **Yes** |
+
+### C.8 Suitability Matrix for QtAgOpenGPS Requirements
+
+```
+                    ┌─────────────────────────────────────────────────────────┐
+                    │           SUITABILITY FOR QtAgOpenGPS                   │
+                    ├─────────────────────────────────────────────────────────┤
+                    │                                                          │
+Feature Needed      │ Canvas  Shapes  Qt3D   QSGGeoNode  QSGRenderNode        │
+────────────────────┼──────────────────────────────────────────────────────────
+Custom MVP matrix   │   No      No     Partial   Yes         Yes              │
+Dynamic triangles   │   No      Partial  Yes     Yes         Yes              │
+Flat colors only    │   Yes     Yes     Yes      Yes         Yes              │
+No depth test       │   Yes     Yes     Partial  Yes         Yes              │
+Low overhead        │   No      Partial  No      Yes         Yes              │
+Existing code reuse │   No      No      No       Partial     Yes              │
+Auto batching       │   No      Partial  Partial Yes         No               │
+Vulkan support      │   Partial Yes     Yes      Yes         No               │
+────────────────────┼──────────────────────────────────────────────────────────
+SCORE               │  2/8    3/8     4/8      7/8         6/8               │
+                    │                                                          │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### C.9 Recommended Migration Path
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                    RECOMMENDED MIGRATION PATH                        │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│  PHASE 1: QSGRenderNode (Quick Win)                                 │
+│  ──────────────────────────────────                                 │
+│  • Move oglMain_Paint() logic to QSGRenderNode::render()            │
+│  • Keep existing OpenGL code and custom matrices                    │
+│  • Eliminate FBO overhead                                           │
+│  • Validate approach, benchmark performance                         │
+│                                                                      │
+│  DECISION POINT: Is Phase 1 performance sufficient?                 │
+│  ─────────────────────────────────────────────────                  │
+│  If YES → Maintain QSGRenderNode approach                           │
+│  If NO  → Proceed to Phase 2                                        │
+│                                                                      │
+│  PHASE 2: QSGGeometryNode + Custom Material (Full Optimization)     │
+│  ──────────────────────────────────────────────────────────────     │
+│  • Implement custom QSGMaterial with projection uniforms            │
+│  • Write and compile shaders to .qsb format                         │
+│  • Benefit from automatic draw call batching                        │
+│  • Get automatic Vulkan support on Android                          │
+│                                                                      │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+### C.10 References
+
+- [Qt Quick Canvas](https://doc.qt.io/qt-6/qml-qtquick-canvas.html)
+- [Qt Quick Shapes](https://doc.qt.io/qt-6/qml-qtquick-shapes-shape.html)
+- [Qt Quick 3D](https://doc.qt.io/qt-6/qtquick3d-index.html)
+- [QSGGeometryNode](https://doc.qt.io/qt-6/qsggeometrynode.html)
+- [QSGRenderNode](https://doc.qt.io/qt-6/qsgrendernode.html)
+- [QSGMaterial](https://doc.qt.io/qt-6/qsgmaterial.html)
+- [Qt Shader Tools](https://doc.qt.io/qt-6/qtshadertools-index.html)
+
+---
+
 ## Document History
 
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
 | 1.0 | 2025-11-29 | - | Initial analysis and proposal |
+| 1.1 | 2025-12-01 | - | Added Appendix C: Complete Qt rendering options comparison |
 
 ---
 
