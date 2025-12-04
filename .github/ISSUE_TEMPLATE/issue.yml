@@ -1,0 +1,105 @@
+name: Issue Report
+description: Report a bug, request a feature, or suggest improvements
+title: "[TYPE]: "
+labels: ["status: needs-triage"]
+assignees:
+  - mehdijaber
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for contributing to QtAgOpenGPS! Please fill out the form below to help us address your issue effectively.
+
+  - type: dropdown
+    id: issue-type
+    attributes:
+      label: Issue Type
+      description: Select the type of issue you are reporting
+      options:
+        - Bug Report
+        - Feature Request
+        - Code Improvement/Refactoring
+        - Documentation
+        - Question/Discussion
+        - Migration from AgOpenGPS
+    validations:
+      required: true
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      description: How important is this issue?
+      options:
+        - Low
+        - Medium
+        - High
+        - Critical
+    validations:
+      required: true
+
+  - type: dropdown
+    id: component
+    attributes:
+      label: Component
+      description: Which part of the codebase does this affect?
+      options:
+        - UI/QML
+        - OpenGL Rendering
+        - GPS/Position
+        - Hardware I/O
+        - Field Management
+        - Settings/Configuration
+        - Build/CMake
+        - Documentation
+        - Multiple Components
+    validations:
+      required: false
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: Detailed description of the issue
+      placeholder: Provide a clear and concise description of the issue or feature request
+    validations:
+      required: true
+
+  - type: textarea
+    id: current-behavior
+    attributes:
+      label: Current Behavior
+      description: What currently happens (for bugs)?
+      placeholder: Describe what the application does now
+
+  - type: textarea
+    id: expected-behavior
+    attributes:
+      label: Expected Behavior
+      description: What should happen?
+      placeholder: Describe what you expected to happen
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed Solution
+      description: Your suggested approach (optional)
+      placeholder: If you have ideas on how to fix or implement this, please share them
+
+  - type: textarea
+    id: files
+    attributes:
+      label: Affected Files
+      description: List of files that need modification
+      placeholder: |
+        - formgps.cpp:123
+        - qml/MainWindow.qml:456
+        - classes/cnmea.cpp:789
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional Context
+      description: Any other context about the problem
+      placeholder: Screenshots, logs, stack traces, related issues, etc.
