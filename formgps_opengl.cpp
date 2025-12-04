@@ -471,7 +471,7 @@ void FormGPS::oglMain_Paint()
             //Direct line to flag if flag selected
             if (flagNumberPicked > 0)
             {
-                if (flagPts.count() > flagNumberPicked) {
+                if (flagPts.count() >= flagNumberPicked) {
                     gldraw1.clear();
                     gl->glLineWidth(2);
                     //TODO: implement with shader: GL.LineStipple(1, 0x0707);

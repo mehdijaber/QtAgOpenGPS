@@ -2415,6 +2415,7 @@ void FormGPS::FileSaveFlags()
     QTextStream writer(&flagsfile);
     writer.setLocale(QLocale::C);
     writer.setRealNumberNotation(QTextStream::FixedNotation);
+    writer.setRealNumberPrecision(9);  // 9 decimals = ~0.1mm GPS precision
 
     writer << "$Flags" << Qt::endl;
 
