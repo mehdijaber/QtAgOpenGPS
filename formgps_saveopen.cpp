@@ -1044,6 +1044,8 @@ bool FormGPS::FileOpenField(QString fieldDir, int flags)
             // Local temporary storage - no lock needed
             QVector<QSharedPointer<PatchTriangleList>> localPatchList;
             QVector<QSharedPointer<PatchTriangleList>> localTriangleList;
+            QVector<QSharedPointer<PatchBoundingBox>> localPatchBoundingBoxList;
+
             double localWorkedArea = 0.0;
 
             //read header
@@ -1059,9 +1061,12 @@ bool FormGPS::FileOpenField(QString fieldDir, int flags)
                 int verts = line.toInt();
 
                 QSharedPointer<PatchTriangleList> triangleList = QSharedPointer<PatchTriangleList>(new PatchTriangleList);
+                QSharedPointer<PatchBoundingBox> boundingbox = QSharedPointer<PatchBoundingBox>(new PatchBoundingBox);
+
                 triangleList->reserve(verts);  // Phase 1.1: Pre-allocate memory
                 localPatchList.append(triangleList);
                 localTriangleList.append(triangleList);
+                localPatchBoundingBoxList.append(boundingbox);
 
                 for (int v = 0; v < verts; v++)
                 {
@@ -1073,6 +1078,11 @@ bool FormGPS::FileOpenField(QString fieldDir, int flags)
                     vecFix.setY(QStringView(line).mid(comma1 + 1, comma2 - comma1 - 1).toDouble());
                     vecFix.setZ(QStringView(line).mid(comma2 + 1).toDouble());
                     triangleList->append(vecFix);
+
+                    if (vecFix.x() < (*boundingbox).minx) (*boundingbox).minx = vecFix.x();
+                    if (vecFix.x() > (*boundingbox).maxx) (*boundingbox).maxx = vecFix.x();
+                    if (vecFix.y() < (*boundingbox).miny) (*boundingbox).miny = vecFix.y();
+                    if (vecFix.y() > (*boundingbox).maxy) (*boundingbox).maxy = vecFix.y();
                 }
 
                 //calculate area of this patch - AbsoluteValue of (Ax(By-Cy) + Bx(Cy-Ay) + Cx(Ay-By)/2)
@@ -1104,6 +1114,8 @@ bool FormGPS::FileOpenField(QString fieldDir, int flags)
             this->setDistanceUser(0.0);
             triStrip[0].triangleList = localTriangleList.isEmpty() ? QSharedPointer<PatchTriangleList>(new PatchTriangleList) : localTriangleList.last();
             triStrip[0].patchList = localPatchList;
+            triStrip[0].patchBoundingBoxList = localPatchBoundingBoxList;
+            patchesBufferDirty = true;
             m_workedAreaTotal = m_workedAreaTotal + localWorkedArea;
             lock.unlock();
         }

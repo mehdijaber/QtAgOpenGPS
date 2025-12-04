@@ -15,6 +15,12 @@ void FormGPS::simConnectSlots()
     connect(&sim, &CSim::newPosition, this, &FormGPS::onSimNewPosition, Qt::UniqueConnection);
     connect(&timerSim, &QTimer::timeout, this, &FormGPS::onSimTimerTimeout, Qt::UniqueConnection);
 
+    // Ensure stable gpsHz by using precise timer, accurate to 1 ms.
+    // With this timer, any deviation from expected Hz is guaranteed
+    // to not be in the simulator mechanism but must be in the
+    // actual calculations in FormGPS.
+    timerSim.setTimerType(Qt::PreciseTimer);
+
     if (SettingsManager::instance()->menu_isSimulatorOn()) {
         pn.latitude = sim.latitude;
         pn.longitude = sim.longitude;

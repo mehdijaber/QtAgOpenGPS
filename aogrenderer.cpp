@@ -2,6 +2,7 @@
 #include <QOpenGLContext>
 #include <QQuickWindow>
 #include <QOpenGLFramebufferObject>
+#include <QtCore/QRunnable>
 
 #include <functional>
 
@@ -121,3 +122,102 @@ QBindable<double> AOGRendererInSG::bindableShiftY() {
     return QBindable<double>(&m_shiftY);
 }
 
+/**************************************************/
+/* NEW QQuickItem-based renderer                  */
+/**************************************************/
+AOGRendererItem::AOGRendererItem()
+{
+    setFlag(ItemHasContents, true);
+}
+
+QSGNode *AOGRendererItem::updatePaintNode(QSGNode *node, UpdatePaintNodeData *)
+{
+    AOGRendererNode *n = static_cast<AOGRendererNode *>(node);
+    if (!n)
+        n = new AOGRendererNode(this->window());
+
+    n->sync(this);
+    return n;
+}
+
+void AOGRendererItem::setInitCallback(std::function<void ()> callback) {
+    initCallback = callback;
+    emit initCallbackChanged();
+}
+
+void AOGRendererItem::setPaintCallback(std::function<void ()> callback) {
+    paintCallback = callback;
+    emit paintCallbackChanged();
+}
+
+void AOGRendererItem::setCleanupCallback(std::function<void ()> callback) {
+    cleanupCallback = callback;
+    emit cleanupCallbackChanged();
+}
+
+void AOGRendererItem::setCallbackObject(void *object) {
+    callback_object = object;
+    emit callbackObjectChanged();
+}
+
+void AOGRendererItem::setSamples(int samples) {
+    this->samples = samples;
+    emit samplesChanged();
+}
+
+/*******************************************
+ * NEW QSGRenderNode renderer for the item *
+ *******************************************/
+AOGRendererNode::AOGRendererNode(QQuickWindow *window): m_window(window)
+{
+
+}
+
+AOGRendererNode::~AOGRendererNode()
+{
+    //releaseResources();
+}
+
+void AOGRendererNode::sync(QQuickItem *item)
+{
+    //bring in stuff from the item
+    our_rect = item->boundingRect();
+    this->item = static_cast<AOGRendererItem *>(item);
+    //this->m_window = item->window();
+}
+
+QSGRenderNode::RenderingFlags AOGRendererNode::flags() const
+{
+    return QSGRenderNode::BoundedRectRendering | QSGRenderNode::DepthAwareRendering;
+}
+
+QRectF AOGRendererNode::rect() const
+{
+    return our_rect;
+}
+
+void AOGRendererNode::render(const RenderState *state)
+{
+    QSGRendererInterface *rif = m_window->rendererInterface();
+    Q_ASSERT(rif->graphicsApi() == QSGRendererInterface::OpenGL);
+    QOpenGLFunctions *gl = QOpenGLContext::currentContext()->functions();
+
+    if (!initialized) {
+        //initialize shaders and such if needed
+        if(item && item->initCallback)
+            item->initCallback();
+        //call initCallback
+        initialized = true;
+    }
+
+    if (item && item->paintCallback)
+        item->paintCallback();
+
+    gl->glDisable(GL_BLEND);
+}
+
+void AOGRendererNode::releaseResources()
+{
+    if(item && item->cleanupCallback)
+        item->cleanupCallback();
+}

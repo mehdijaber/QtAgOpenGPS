@@ -6,7 +6,8 @@
 #include "formgps.h"
 
 CPatches::CPatches() {
-   triangleList = QSharedPointer<PatchTriangleList>( new PatchTriangleList);
+    triangleList = QSharedPointer<PatchTriangleList>( new PatchTriangleList);
+    triangleListBoundingBox = QSharedPointer<PatchBoundingBox>( new PatchBoundingBox);
 }
 
 /* torriem: modifications. Passing in left, right points, and color, rather than
@@ -26,8 +27,11 @@ void CPatches::TurnMappingOn(CTool &tool, int j)
 
         //starting a new patch chunk so create a new triangle list
         triangleList = QSharedPointer<PatchTriangleList>( new PatchTriangleList);
+        //create a new bounding box
+        triangleListBoundingBox = QSharedPointer<PatchBoundingBox>( new PatchBoundingBox);
 
         patchList.append(triangleList);
+        patchBoundingBoxList.append(triangleListBoundingBox);
 
         //Add Patch colour
         if (!tool.isMultiColoredSections)
@@ -74,7 +78,11 @@ void CPatches::TurnMappingOff(CTool &tool,
    {
        //torriem: patch strip is too small to keep, so get rid of it
        triangleList->clear();
-       if (patchList.count() > 0) patchList.removeAt(patchList.count() - 1);
+       triangleListBoundingBox.clear();
+       if (patchList.count() > 0) {
+           patchList.removeAt(patchList.count() - 1);
+           patchBoundingBoxList.removeAt(patchList.count() - 1);
+       }
    }
 }
 
@@ -101,6 +109,15 @@ void CPatches::AddMappingPoint(CTool &tool,
 
     //Right side
     triangleList->append(rightPoint);
+
+    if (vleftPoint.easting < (*triangleListBoundingBox).minx) (*triangleListBoundingBox).minx = vleftPoint.easting;
+    if (vleftPoint.easting > (*triangleListBoundingBox).maxx) (*triangleListBoundingBox).maxx = vleftPoint.easting;
+    if (vleftPoint.northing < (*triangleListBoundingBox).maxy) (*triangleListBoundingBox).maxy = vleftPoint.northing;
+    if (vleftPoint.northing > (*triangleListBoundingBox).maxy) (*triangleListBoundingBox).maxy = vleftPoint.northing;
+    if (vrightPoint.easting < (*triangleListBoundingBox).minx) (*triangleListBoundingBox).minx = vrightPoint.easting;
+    if (vrightPoint.easting > (*triangleListBoundingBox).maxx) (*triangleListBoundingBox).maxx = vrightPoint.easting;
+    if (vrightPoint.northing < (*triangleListBoundingBox).maxy) (*triangleListBoundingBox).maxy = vrightPoint.northing;
+    if (vrightPoint.northing > (*triangleListBoundingBox).maxy) (*triangleListBoundingBox).maxy = vrightPoint.northing;
 
     //count the triangle pairs
     numTriangles++;
@@ -137,8 +154,10 @@ void CPatches::AddMappingPoint(CTool &tool,
         tool.patchSaveList.append(triangleList);
 
         triangleList = QSharedPointer<PatchTriangleList>(new PatchTriangleList);
+        triangleListBoundingBox = QSharedPointer<PatchBoundingBox>( new PatchBoundingBox);
 
         patchList.append(triangleList);
+        patchBoundingBoxList.append(triangleListBoundingBox);
 
         //Add Patch colour
         if (!tool.isMultiColoredSections)

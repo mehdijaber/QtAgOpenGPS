@@ -9,12 +9,15 @@
 #include <assert.h>
 #include <math.h>
 #include "classes/settingsmanager.h"
+#include "glm.h"
+#include <QPainter>
 
 //module-level symbols
 QOpenGLShaderProgram *simpleColorShader = 0;
 QOpenGLShaderProgram *texShader = 0;
 QOpenGLShaderProgram *interpColorShader = 0;
 QOpenGLShaderProgram *simpleColorShaderBack = 0;
+QOpenGLShaderProgram *texShaderBack = 0;
 
 QVector<QOpenGLTexture *> texture;
 
@@ -52,12 +55,24 @@ void initializeBackShader() {
             qDebug() << "Shader link error::" << simpleColorShaderBack->log();
         }
     }
+    if (!texShaderBack) {
+        texShaderBack = new QOpenGLShaderProgram(); //memory managed by Qt
+        if (!texShaderBack->addShaderFromSourceFile(QOpenGLShader::Vertex, PREFIX "/shaders/colortex_vshader.vsh")) {
+            qDebug() << "Vertex shader compile error:" << texShader->log();
+        }
+        if (!texShaderBack->addShaderFromSourceFile(QOpenGLShader::Fragment, PREFIX "/shaders/colortex_fshader.fsh")) {
+            qDebug() << "Fragment shader compile error:" << texShader->log();
+        }
+        texShaderBack->bindAttributeLocation("vertex", 0);
+        texShaderBack->bindAttributeLocation("texcoord_src", 1);
+        if (!texShaderBack->link()) {
+            qDebug() << "Shader link error::" << texShader->log();
+        }
+    }
 }
 
 void initializeShaders() {
     QOpenGLContext *glContext = QOpenGLContext::currentContext();
-    qDebug() << glContext->isValid();
-
     glContext->functions()->initializeOpenGLFunctions();
 
     //GL context must be bound by caller, and this must be called from
@@ -110,7 +125,7 @@ void initializeShaders() {
 void initializeTextures() {
     QOpenGLTexture *t;
 
-    texture.clear();
+    if (texture.size()) return; //textures already loaded.
 
     t = new QOpenGLTexture(QImage(PREFIX "/images/textures/floor.png"));
     t->setMinMagFilters(QOpenGLTexture::Linear, QOpenGLTexture::Linear);
@@ -372,6 +387,63 @@ void glDrawArraysTexture(QOpenGLFunctions *gl,
     texShader->release();
     //gl->glDisable(GL_TEXTURE_2D);
 }
+
+//Buffer should consist of 5D values.  3D for x,y,z, and 2D for
+//texture x,y coordinate.
+void glDrawArraysTextureBack(QOpenGLFunctions *gl,
+                         QMatrix4x4 mvp,
+                         GLenum operation,
+                         QOpenGLBuffer &vertexBuffer,
+                         GLenum GL_type,
+                         int count,
+                         bool useColor = false,
+                         QColor color = QColor::fromRgbF(1,1,1))
+{
+    //gl->glEnable(GL_TEXTURE_2D);
+    //bind shader
+    //assert(texShader->bind());
+    if (!texShaderBack->bind()) {
+        qDebug() << "bind failed" << texShaderBack->log();
+    }
+    //set mvp matrix
+    texShaderBack->setUniformValue("color", color);
+    texShaderBack->setUniformValue("texture", 0);
+    texShaderBack->setUniformValue("mvpMatrix", mvp);
+    texShaderBack->setUniformValue("useColor", useColor);
+
+
+    vertexBuffer.bind();
+
+    //enable the vertex attribute array in shader
+    texShaderBack->enableAttributeArray("vertex");
+    texShaderBack->enableAttributeArray("texcoord_src");
+
+    //use attribute array from buffer, using non-normalized vertices
+    gl->glVertexAttribPointer(texShaderBack->attributeLocation("vertex"),
+                              3, //3D vertices
+                              GL_type, //type of data GL_FLAOT or GL_DOUBLE
+                              GL_FALSE, //not normalized vertices!
+                              5*sizeof(float), //vertex+color
+                              0 //start at offset 0 in buffer
+                             );
+
+    gl->glVertexAttribPointer(texShaderBack->attributeLocation("texcoord_src"),
+                              2, //2D coordinate
+                              GL_type, //type of data GL_FLAOT or GL_DOUBLE
+                              GL_FALSE, //not normalized vertices!
+                              5*sizeof(float), //vertex+color
+                              (void *)(sizeof(float) * 3) //start at 3rd float in buffer
+                             );
+
+    //draw primitive
+    gl->glDrawArrays(operation,0,count);
+    //release buffer
+    vertexBuffer.release();
+    //release shader
+    texShaderBack->release();
+    //gl->glDisable(GL_TEXTURE_2D);
+}
+
 void DrawPolygon(QOpenGLFunctions *gl, QMatrix4x4 mvp, QVector<Vec2> &polygon, float size, QColor color)
 {
     GLHelperOneColor gldraw;
@@ -421,6 +493,41 @@ void DrawPolygonBack(QOpenGLFunctions *gl, QMatrix4x4 mvp, QVector<Vec3> &polygo
             gldraw.append(QVector3D(polygon[i].easting, polygon[i].northing, 0));
         }
         gldraw.draw(gl, mvp, color, GL_LINE_LOOP, size);
+    }
+}
+
+void DrawPolygonBack(QPainter &painter, QMatrix4x4 mvp, QVector<Vec2> &polygon, float size, QColor color)
+{
+    if (polygon.count() > 2)
+    {
+        QPolygonF p;
+        for (int i = 0; i < polygon.count() ; i++)
+        {
+            p.append(glm::backbuffer_world_to_screen(mvp, polygon[i]));
+        }
+        QPen pen(color);
+        pen.setWidth(size);
+        painter.setPen(pen);
+        painter.setBrush(Qt::NoBrush);
+        painter.drawPolygon(p);
+    }
+}
+
+void DrawPolygonBack(QPainter &painter, QMatrix4x4 mvp, QVector<Vec3> &polygon, float size, QColor color)
+{
+    if (polygon.count() > 2)
+    {
+        QPolygonF p;
+
+        for (int i = 0; i < polygon.count() ; i++)
+        {
+            p.append(glm::backbuffer_world_to_screen(mvp, polygon[i]));
+        }
+        QPen pen(color);
+        pen.setWidth(size);
+        painter.setPen(pen);
+        painter.setBrush(Qt::NoBrush);
+        painter.drawPolygon(p);
     }
 }
 
@@ -702,6 +809,19 @@ GLHelperTexture::GLHelperTexture() {
 
 }
 
+void GLHelperTexture::draw(QOpenGLFunctions *gl, QMatrix4x4 mvp, GLenum operation, bool colorize, QColor color)
+{
+    //assume texture is already bound
+    QOpenGLBuffer vertexBuffer;
+    vertexBuffer.create();
+    vertexBuffer.bind();
+    vertexBuffer.allocate(data(),size() * sizeof(VertexTexcoord));
+    vertexBuffer.release();
+
+    glDrawArraysTexture(gl, mvp, operation, vertexBuffer, GL_FLOAT,size(),
+                        colorize, color);
+}
+
 void GLHelperTexture::draw(QOpenGLFunctions *gl, QMatrix4x4 mvp, Textures textureno, GLenum operation, bool colorize, QColor color)
 {
     QOpenGLBuffer vertexBuffer;
@@ -714,4 +834,21 @@ void GLHelperTexture::draw(QOpenGLFunctions *gl, QMatrix4x4 mvp, Textures textur
     glDrawArraysTexture(gl, mvp, operation, vertexBuffer, GL_FLOAT,size(),
                         colorize, color);
     texture[textureno]->release();
+}
+
+GLHelperTextureBack::GLHelperTextureBack() {
+
+}
+
+void GLHelperTextureBack::draw(QOpenGLFunctions *gl, QMatrix4x4 mvp, GLenum operation, bool colorize, QColor color)
+{
+    //assume texture is already bound
+    QOpenGLBuffer vertexBuffer;
+    vertexBuffer.create();
+    vertexBuffer.bind();
+    vertexBuffer.allocate(data(),size() * sizeof(VertexTexcoord));
+    vertexBuffer.release();
+
+    glDrawArraysTextureBack(gl, mvp, operation, vertexBuffer, GL_FLOAT,size(),
+                        colorize, color);
 }

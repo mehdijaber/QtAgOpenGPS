@@ -8,6 +8,13 @@
 
 typedef QVector<QVector3D> PatchTriangleList;
 
+struct PatchBoundingBox {
+    float minx;
+    float miny;
+    float maxx;
+    float maxy;
+};
+
 class CFieldData;
 class CTool;
 
@@ -17,11 +24,13 @@ public:
     //torriem: we use a QVector of QVector3D so that it's
     //more efficient to draw on openGL back buffer.
 
-    //list of patch data individual triangles
+    //currently building list of patch data individual triangles
     QSharedPointer<PatchTriangleList> triangleList;
+    QSharedPointer<PatchBoundingBox> triangleListBoundingBox;
 
     //list of the list of patch data individual triangles for that entire section activity
     QVector<QSharedPointer<PatchTriangleList>> patchList;
+    QVector<QSharedPointer<PatchBoundingBox>> patchBoundingBoxList;
 
     //mapping
     bool isDrawing = false;

@@ -14,7 +14,8 @@
 #include "cnmea.h"
 #include "qmlutil.h"
 //#include "common.h"
-#include "formgps.h"
+#include "formgps.h" //TODO get rid of this; it's a circular reference
+#include <QElapsedTimer>
 
 CContour::CContour(QObject *parent)
     : QObject(parent)
@@ -98,6 +99,11 @@ void CContour::BuildContourGuidanceLine(double secondsSinceStart, CVehicle &vehi
                 {
                     minDistance = dist;
                     stripNum = s;
+                    if (oldStripNum != stripNum) {
+                        //invalidate our GPU buffers since the active strip has changed
+                        stripListBuffersDirty = true;
+                        oldStripNum = stripNum;
+                    }
                     pt = lastLockPt = p;
                     //B = p;
                 }
@@ -672,7 +678,7 @@ void CContour::BuildFenceContours(CBoundary &bnd, double spacingInt, int patchCo
 }
 
 //draw the red follow me line
-void CContour::DrawContourLine(QOpenGLFunctions *gl, const QMatrix4x4 &mvp, QObject *mainWindow)
+void CContour::DrawContourLine(QOpenGLFunctions *gl, const QMatrix4x4 &mvp, QObject *mainWindow, QElapsedTimer &swFrame)
 {
     bool isStanleyUsed = SettingsManager::instance()->vehicle_isStanleyUsed();
     double lineWidth = SettingsManager::instance()->display_lineWidth();
@@ -691,7 +697,6 @@ void CContour::DrawContourLine(QOpenGLFunctions *gl, const QMatrix4x4 &mvp, QObj
         gldraw.append(QVector3D(ctList[h].easting, ctList[h].northing, 0));
 
     gldraw.draw(gl,mvp,color,GL_LINE_STRIP, lineWidth);
-
 
     gldraw.clear();
     color.setRgbF(0.87f, 08.7f, 0.25f);
@@ -717,12 +722,47 @@ void CContour::DrawContourLine(QOpenGLFunctions *gl, const QMatrix4x4 &mvp, QObj
     if (stripNum > -1)
     {
         gldraw.clear();
+        QVector<QVector3D> stripListPart;
 
-        for (int h = 0; h < stripList[stripNum]->count(); h++)
+        if (stripListBuffersDirty) {
+            //release all existing GPU buffers
+            stripListBuffers.clear();
+            stripListBuffersDirty = false;
+        }
+
+        int numbuffs = stripList[stripNum]->count() / 10000; //10000 points per buffer
+
+        //draw points 10,000 at a time, caching them in GPU buffers
+        for (int b = 0; b < numbuffs; b++) {
+            if (stripListBuffers.size() <= b) {
+                //if additonal points were added since last time, make a
+                //new buffer and fill it
+                stripListBuffers.append(QOpenGLBuffer());
+                stripListPart.clear();
+
+                for (int h=b * 10000; h < (b+1) * 10000; h++) {
+                    stripListPart.append(QVector3D((*stripList[stripNum])[h].easting,
+                                                   (*stripList[stripNum])[h].northing,
+                                                   0));
+                }
+                stripListBuffers[b].create();
+                stripListBuffers[b].bind();
+                stripListBuffers[b].allocate(stripListPart.data(), 10000 * sizeof(QVector3D));
+                stripListBuffers[b].release();
+            }
+            //qDebug() << "Drawing from saved buffer.";
+            glDrawArraysColor(gl, mvp, GL_POINTS, color, stripListBuffers[b],GL_FLOAT, 10000);
+        }
+
+        //now draw the remaining points
+        //TODO: android crashes here sometimes with QList index out of range
+        for (int h = numbuffs*10000; h < stripList[stripNum]->count(); h++)
             gldraw.append(QVector3D((*stripList[stripNum])[h].easting, (*stripList[stripNum])[h].northing, 0));
 
         gldraw.draw(gl,mvp,color,GL_POINTS,useWidth);
     }
+
+    //qDebug() << "drawcontour 4" << stripList[stripNum]->count() << swFrame.elapsed();
 
     color.setRgbF(0.35f, 0.30f, 0.90f);
     gldraw.clear();
@@ -736,6 +776,7 @@ void CContour::DrawContourLine(QOpenGLFunctions *gl, const QMatrix4x4 &mvp, QObj
         gldraw.append(QVector3D(goalPointCT.easting, goalPointCT.northing, 0.0));
         gldraw.draw(gl,mvp,color,GL_POINTS,6.0f);
     }
+    //qDebug() << "drawcontour 5" << swFrame.elapsed();
 }
 
 //Reset the contour to zip

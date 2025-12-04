@@ -15,11 +15,20 @@
 #include <QOpenGLContext>
 #include <QPair>
 #include <QElapsedTimer>
+#include <QLabel>
+#include <QPainter>
 #include "glm.h"
 #include "aogrenderer.h"
 #include "cpgn.h"
 #include "qmlutil.h"
 #include "glutils.h"
+#include <QtConcurrent/QtConcurrentRun>
+
+
+Q_LOGGING_CATEGORY (qpos, "formgps_position.qtagopengps")
+
+extern QLabel *grnPixelsWindow;
+extern QLabel *overlapPixelsWindow;
 
 //called for every new GPS or simulator position
 void FormGPS::UpdateFixPosition()
@@ -34,7 +43,8 @@ void FormGPS::UpdateFixPosition()
     //swFrame.Stop();
     //Measure the frequency of the GPS updates
     //timeSliceOfLastFix = (double)(swFrame.elapsed()) / 1000;
-    lock.lockForWrite(); //stop GL from updating while we calculate a new position
+    qDebug(qpos) << "swFrame time at new frame: " << swFrame.elapsed();
+    //lock.lockForWrite(); //stop GL from updating while we calculate a new position
 
     // Phase 6.0.21: Calculate Hz from CPU timer (AgIOService.nowHz/gpsHz removed)
     // GPS frequency is calculated from frame timing
@@ -59,11 +69,11 @@ void FormGPS::UpdateFixPosition()
     if (!isGPSPositionInitialized)
     {
         InitializeFirstFewGPSPositions();
-        lock.unlock();
+        //lock.unlock();
         return;
     }
 
-    //qDebug() << "Easting " <<  pn.fix.easting << "Northing" <<  pn.fix.northing << "Time " << swFrame.elapsed() << nowHz;
+    //qDebug(qpos) << "Easting " <<  pn.fix.easting << "Northing" <<  pn.fix.northing << "Time " << swFrame.elapsed() << nowHz;
 
     swFrame.restart();
 
@@ -109,7 +119,7 @@ void FormGPS::UpdateFixPosition()
                     stepFixPts[0].easting = pn.fix.easting;
                     stepFixPts[0].northing = pn.fix.northing;
                     stepFixPts[0].isSet = 1;
-                    lock.unlock();
+                    //lock.unlock();
                     return;
                 }
 
@@ -120,7 +130,7 @@ void FormGPS::UpdateFixPosition()
                     stepFixPts[0].easting = pn.fix.easting;
                     stepFixPts[0].northing = pn.fix.northing;
                     stepFixPts[0].isSet = 1;
-                    lock.unlock();
+                    //lock.unlock();
                     return;
                 }
 
@@ -220,7 +230,7 @@ void FormGPS::UpdateFixPosition()
 
                 lastGPS = pn.fix;
 
-                lock.unlock();
+                //lock.unlock();
                 return;
             }
         }
@@ -803,7 +813,7 @@ void FormGPS::UpdateFixPosition()
         CVehicle::instance()->fixHeading-= glm::twoPI;
 
     //#endregion
-
+//
     //#region Corrected Position for GPS_OUT
     //NOTE: Michael, I'm not sure about this entire region
 
@@ -1361,17 +1371,30 @@ void FormGPS::UpdateFixPosition()
     //oglMain.MakeCurrent();
     //oglMain.Refresh();
 
-    AOGRendererInSG *renderer = mainWindow->findChild<AOGRendererInSG *>("openglcontrol");
-    // CRITICAL: Force OpenGL update in GUI thread to prevent threading violation
-    if (renderer) {
-        QMetaObject::invokeMethod(renderer, "update", Qt::QueuedConnection);
+    if (isJobStarted()) {
+        processSectionLookahead();
+
+        //oglZoom_Paint();
+        //processOverlapCount();
     }
+
+    qDebug(qpos) << "Time before painting field: " << (float)swFrame.nsecsElapsed() / 1000000;
+#if !defined(Q_OS_WINDOWS) //&& !defined(Q_OS_ANDROID)
+    oglMain_Paint();
+#endif
 
     //NOTE: Not sure here.
     //stop the timer and calc how long it took to do calcs and draw
+    AOGRendererInSG *renderer = mainWindow->findChild<AOGRendererInSG *>("openglcontrol");
+    // CRITICAL: Force OpenGL update in GUI thread to prevent threading violation
+    if (renderer) {
+        QMetaObject::invokeMethod(renderer, "update", Qt::DirectConnection);
+    }
+    qDebug(qpos) << "Time after painting field: " << (float)swFrame.nsecsElapsed() / 1000000;
+
     frameTimeRough = swFrame.elapsed();
 
-    if (frameTimeRough > 80) frameTimeRough = 80;
+    //if (frameTimeRough > 80) frameTimeRough = 80;
 
     // Phase 6.0.20: Qt 6.8 BINDABLE - use setter for automatic signal emission
     setFrameTime(frameTime() * 0.90 + frameTimeRough * 0.1);
@@ -1496,47 +1519,6 @@ void FormGPS::UpdateFixPosition()
 
     // Note: Change detection flags (posChangedFlag, vehChangedFlag, etc.)
     // are kept for potential future optimizations but not used for signals
-
-    newframe = true;
-
-    if (isJobStarted()) {
-        GLint oldviewport[4];
-        QOpenGLContext *glContext = QOpenGLContext::currentContext();
-
-        //if there's no context we need to create one because
-        //the qml renderer is in a different thread.
-        if (!glContext) {
-            glContext = new QOpenGLContext;
-            glContext->create();
-        }
-
-        if (!backSurface.isValid()) {
-            QSurfaceFormat format = glContext->format();
-            backSurface.setFormat(format);
-            backSurface.create();
-            auto r = backSurface.isValid();
-            qDebug() << "back surface creation: " << r;
-        }
-
-        auto result = glContext->makeCurrent(&backSurface);
-
-        initializeBackShader();
-
-        GLint origview[4];
-        glContext->functions()->glGetIntegerv(GL_VIEWPORT, origview);
-
-        oglBack_Paint();
-        processSectionLookahead();
-
-        oglZoom_Paint();
-        processOverlapCount();
-
-        glContext->functions()->glViewport(origview[0], origview[1], origview[2], origview[3]);
-    }
-
-    lock.unlock();
-    //qDebug() << "frame time after processing a new position part 2 " << swFrame.elapsed();
-
 }
 
 void FormGPS::TheRest()
@@ -1603,6 +1585,808 @@ void FormGPS::TheRest()
     previousSpeed = CVehicle::instance()->avgSpeed;
 }
 
+void FormGPS::processSectionLookahead() {
+    //qDebug(qpos) << "frame time before doing section lookahead " << swFrame.elapsed(;
+    //lock.lockForWrite(;
+    //qDebug(qpos) << "frame time after getting lock  " << swFrame.elapsed(;
+#define USE_QPAINTER_BACKBUFFER
+
+    qDebug(qpos) << "Main callback thread is" << QThread::currentThread();
+
+#ifdef USE_QPAINTER_BACKBUFFER
+    auto result = QtConcurrent::run( [this]() {
+        QMatrix4x4 projection;
+        QMatrix4x4 modelview;
+
+        //  Load the identity.
+        projection.setToIdentity();
+
+        //projection.perspective(6.0f,1,1,6000);
+        projection.perspective(glm::toDegrees((double)0.06f), 1.666666666666f, 50.0f, 520.0f);
+
+        if (this->grnPix.isNull())
+            this->grnPix = QImage(QSize(500,300), QImage::Format_RGBX8888);
+
+        this->grnPix.fill(0);
+
+        //gl->glLoadIdentity();					// Reset The View
+        modelview.setToIdentity();
+
+        //back the camera up
+        modelview.translate(0, 0, -500);
+
+        //rotate camera so heading matched fix heading in the world
+        //gl->glRotated(toDegrees(CVehicle::instance()->fixHeadingSection), 0, 0, 1);
+        modelview.rotate(glm::toDegrees(CVehicle::instance()->toolPos.heading), 0, 0, 1);
+
+        modelview.translate(-CVehicle::instance()->toolPos.easting - sin(CVehicle::instance()->toolPos.heading) * 15,
+                            -CVehicle::instance()->toolPos.northing - cos(CVehicle::instance()->toolPos.heading) * 15,
+                            0);
+
+        // Viewport: NDC to pixel coordinates
+        QMatrix4x4 viewport;
+        viewport.translate(500 / 2.0f, 300 / 2.0f, 0);
+        viewport.scale(500 / 2.0f, -300 / 2.0f, 1);  // negative Y to flip
+
+        QMatrix4x4 mvp = projection * modelview;
+
+
+        //patch color
+        QColor patchColor = QColor::fromRgbF(0.0f, 0.5f, 0.0f);
+
+        QPainter painter;
+        if (!painter.begin(&grnPix)) {
+            qWarning() << "New GPS frame but back buffer painter is still working on the last one.";
+            return;
+        }
+
+        painter.setRenderHint(QPainter::Antialiasing, false);
+
+        painter.setPen(Qt::NoPen);
+
+        QMatrix4x4 vmvp = viewport * mvp;
+
+        painter.setTransform(vmvp.toTransform());
+        painter.setBrush(QBrush(patchColor));
+
+        QPolygonF triangle;
+        QList<QLineF> lines;
+
+        //to draw or not the triangle patch
+        bool isDraw;
+
+        double pivEplus = CVehicle::instance()->pivotAxlePos.easting + 50;
+        double pivEminus = CVehicle::instance()->pivotAxlePos.easting - 50;
+        double pivNplus = CVehicle::instance()->pivotAxlePos.northing + 50;
+        double pivNminus = CVehicle::instance()->pivotAxlePos.northing - 50;
+
+        //QPolygonF frustum({{pivEminus, pivNplus}, {pivEplus, pivNplus },
+        //                   { pivEplus, pivNminus}, {pivEminus, pivNminus }});
+
+        //draw patches j= # of sections
+        for (int j = 0; j < this->triStrip.count(); j++)
+        {
+            //every time the section turns off and on is a new patch
+            int patchCount = this->triStrip[j].patchList.size();
+
+            if (patchCount > 0)
+            {
+                //for every new chunk of patch
+                for (int k = 0; k < this->triStrip[j].patchList.size() ; k++)
+                {
+                    isDraw = false;
+                    QSharedPointer<PatchTriangleList> triList = this->triStrip[j].patchList[k];
+                    QSharedPointer<PatchBoundingBox> bb = this->triStrip[j].patchBoundingBoxList[k];
+
+                    /*
+                    QPolygonF patchBox({{ (*bb).minx, (*bb).miny }, {(*bb).maxx, (*bb).miny},
+                                        { (*bb).maxx, (*bb).maxy }, { (*bb).minx, (*bb).maxy } });
+
+                    if (frustum.intersects(patchBox))
+                        isDraw = true;
+                    */
+
+                    int count2 = triList->size();
+                    for (int i = 1; i < count2; i+=3)
+                    {
+                        //determine if point is in frustum or not
+                        if ((*triList)[i].x() > pivEplus)
+                            continue;
+                        if ((*triList)[i].x() < pivEminus)
+                            continue;
+                        if ((*triList)[i].y() > pivNplus)
+                            continue;
+                        if ((*triList)[i].y() < pivNminus)
+                            continue;
+
+                        //point is in frustum so draw the entire patch
+                        isDraw = true;
+                        break;
+                    }
+
+                    if (isDraw)
+                    {
+                        triangle.clear();
+                        //triangle strip to polygon:
+                        //first two vertices, then every other one to the end
+                        //then from the end back to vertex #3, but every other one.
+
+                        triangle.append(QPointF((*triList)[1].x(), (*triList)[1].y()));
+                        triangle.append(QPointF((*triList)[2].x(), (*triList)[2].y()));
+
+                        //even vertices after first two
+                        for (int i=4; i < count2; i+=2) {
+                            triangle.append(QPointF((*triList)[i].x(), (*triList)[i].y()));
+                        }
+
+                        //odd remaining vertices
+                        for (int i=count2 - (count2 % 2 ? 2 : 1) ; i >2 ; i -=2) {
+                            triangle.append(QPointF((*triList)[i].x(), (*triList)[i].y()));
+                        }
+
+                        painter.drawPolygon(triangle);
+
+                    }
+                }
+            }
+        }
+
+        //draw tool bar for debugging
+        //gldraw.clear();
+        //gldraw.append(QVector3D(tool.section[0].leftPoint.easting, tool.section[0].leftPoint.northing,0.5));
+        //gldraw.append(QVector3D(tool.section[tool.numOfSections-1].rightPoint.easting, tool.section[tool.numOfSections-1].rightPoint.northing,0.5));
+        //gldraw.draw(gl,projection*modelview,QColor::fromRgb(255,0,0),GL_LINE_STRIP,1);
+
+        //draw 245 green for the tram tracks
+        QPen pen(QColor::fromRgb(0,245,0));
+        pen.setWidth(8);
+        painter.setPen(pen);
+
+        if (this->tram.displayMode !=0 && this->tram.displayMode !=0 && (this->track.idx() > -1))
+        {
+            if ((this->tram.displayMode == 1 || this->tram.displayMode == 2))
+            {
+
+                for (int i = 0; i < this->tram.tramList.count(); i++)
+                {
+                    lines.clear();
+                    for (int h = 1; h < this->tram.tramList[i]->count(); h++) {
+                        lines.append(QLineF(glm::backbuffer_world_to_screen(mvp, (*this->tram.tramList[i])[h-1]),
+                                           glm::backbuffer_world_to_screen(mvp, (*this->tram.tramList[i])[h])));
+                    }
+
+                    painter.drawLines(lines);
+                }
+            }
+
+            if (this->tram.displayMode == 1 || this->tram.displayMode == 3)
+            {
+                lines.clear();
+                for (int h = 0; h < this->tram.tramBndOuterArr.count(); h++) {
+                    lines.append(QLineF(glm::backbuffer_world_to_screen(mvp, this->tram.tramBndOuterArr[h-1]),
+                                       glm::backbuffer_world_to_screen(mvp, this->tram.tramBndOuterArr[h])));
+                }
+
+                for (int h = 0; h < this->tram.tramBndInnerArr.count(); h++) {
+                    lines.append(QLineF(glm::backbuffer_world_to_screen(mvp, this->tram.tramBndInnerArr[h-1]),
+                                       glm::backbuffer_world_to_screen(mvp, this->tram.tramBndInnerArr[h])));
+                }
+
+                painter.drawLines(lines);
+            }
+        }
+
+        //draw 240 green for boundary
+        if (this->bnd.bndList.count() > 0)
+        {
+            ////draw the bnd line
+            if (this->bnd.bndList[0].fenceLine.count() > 3)
+            {
+                DrawPolygonBack(painter, mvp, this->bnd.bndList[0].fenceLine,3,QColor::fromRgb(0,240,0));
+            }
+
+
+            //draw 250 green for the headland
+            if (this->isHeadlandOn() && this->bnd.isSectionControlledByHeadland)
+            {
+                DrawPolygonBack(painter, mvp, this->bnd.bndList[0].hdLine,3,QColor::fromRgb(0,250,0));
+            }
+        }
+
+        painter.end();
+
+        //TODO adjust coordinate transformations above to eliminate this step
+        this->grnPix = this->grnPix.mirrored().convertToFormat(QImage::Format_RGBX8888);
+
+        QImage temp = this->grnPix.copy(tool.rpXPosition, 0, tool.rpWidth, 290 /*(int)rpHeight*/);
+        temp.setPixelColor(0,0,QColor::fromRgb(255,128,0));
+        //grnPix = temp; //only show clipped image
+        memcpy(this->grnPixels, temp.constBits(), temp.size().width() * temp.size().height() * 4);
+        //grnPix = temp;
+
+        QThread *currentThread = QThread::currentThread();
+        qDebug(qpos) << "Back render thread is" << currentThread;
+
+        QMetaObject::invokeMethod(QApplication::instance(), [this]() {
+#else
+    oglBack_Paint();
+#endif
+
+    QThread *currentThread = QThread::currentThread();
+    qDebug(qpos) << "Back processing thread is" << currentThread;
+
+    if (SettingsManager::instance()->display_showBack()) {
+        grnPixelsWindow->setPixmap(QPixmap::fromImage(grnPix.mirrored()));
+        //overlapPixelsWindow->setPixmap(QPixmap::fromImage(overPix.mirrored()));
+    }
+
+    //determine where the tool is wrt to headland
+    if (this->isHeadlandOn()) bnd.WhereAreToolCorners(tool);
+
+    //set the look ahead for hyd Lift in pixels per second
+    CVehicle::instance()->hydLiftLookAheadDistanceLeft = tool.farLeftSpeed * CVehicle::instance()->hydLiftLookAheadTime * 10;
+    CVehicle::instance()->hydLiftLookAheadDistanceRight = tool.farRightSpeed * CVehicle::instance()->hydLiftLookAheadTime * 10;
+
+    if (CVehicle::instance()->hydLiftLookAheadDistanceLeft > 200) CVehicle::instance()->hydLiftLookAheadDistanceLeft = 200;
+    if (CVehicle::instance()->hydLiftLookAheadDistanceRight > 200) CVehicle::instance()->hydLiftLookAheadDistanceRight = 200;
+
+    tool.lookAheadDistanceOnPixelsLeft = tool.farLeftSpeed * tool.lookAheadOnSetting * 10;
+    tool.lookAheadDistanceOnPixelsRight = tool.farRightSpeed * tool.lookAheadOnSetting * 10;
+
+    if (tool.lookAheadDistanceOnPixelsLeft > 200) tool.lookAheadDistanceOnPixelsLeft = 200;
+    if (tool.lookAheadDistanceOnPixelsRight > 200) tool.lookAheadDistanceOnPixelsRight = 200;
+
+    tool.lookAheadDistanceOffPixelsLeft = tool.farLeftSpeed * tool.lookAheadOffSetting * 10;
+    tool.lookAheadDistanceOffPixelsRight = tool.farRightSpeed * tool.lookAheadOffSetting * 10;
+
+    if (tool.lookAheadDistanceOffPixelsLeft > 160) tool.lookAheadDistanceOffPixelsLeft = 160;
+    if (tool.lookAheadDistanceOffPixelsRight > 160) tool.lookAheadDistanceOffPixelsRight = 160;
+
+    //determine if section is in boundary and headland using the section left/right positions
+    bool isLeftIn = true, isRightIn = true;
+
+    if (bnd.bndList.count() > 0)
+    {
+        for (int j = 0; j < tool.numOfSections; j++)
+        {
+            //only one first left point, the rest are all rights moved over to left
+            isLeftIn = j == 0 ? bnd.IsPointInsideFenceArea(tool.section[j].leftPoint) : isRightIn;
+            isRightIn = bnd.IsPointInsideFenceArea(tool.section[j].rightPoint);
+
+            if (tool.isSectionOffWhenOut)
+            {
+                //merge the two sides into in or out
+                if (isLeftIn || isRightIn) tool.section[j].isInBoundary = true;
+                else tool.section[j].isInBoundary = false;
+            }
+            else
+            {
+                //merge the two sides into in or out
+                if (!isLeftIn || !isRightIn) tool.section[j].isInBoundary = false;
+                else tool.section[j].isInBoundary = true;
+            }
+        }
+    }
+
+    //determine farthest ahead lookahead - is the height of the readpixel line
+    double rpHeight = 0;
+    double rpOnHeight = 0;
+    double rpToolHeight = 0;
+
+    //pick the larger side
+    if (CVehicle::instance()->hydLiftLookAheadDistanceLeft > CVehicle::instance()->hydLiftLookAheadDistanceRight) rpToolHeight = CVehicle::instance()->hydLiftLookAheadDistanceLeft;
+    else rpToolHeight = CVehicle::instance()->hydLiftLookAheadDistanceRight;
+
+    if (tool.lookAheadDistanceOnPixelsLeft > tool.lookAheadDistanceOnPixelsRight) rpOnHeight = tool.lookAheadDistanceOnPixelsLeft;
+    else rpOnHeight = tool.lookAheadDistanceOnPixelsRight;
+
+    isHeadlandClose = false;
+
+    //clamp the height after looking way ahead, this is for switching off super section only
+    rpOnHeight = fabs(rpOnHeight);
+    rpToolHeight = fabs(rpToolHeight);
+
+    //10 % min is required for overlap, otherwise it never would be on.
+    int pixLimit = (int)((double)(tool.section[0].rpSectionWidth * rpOnHeight) / (double)(5.0));
+    //bnd.isSectionControlledByHeadland = true;
+    if ((rpOnHeight < rpToolHeight && this->isHeadlandOn() && bnd.isSectionControlledByHeadland)) rpHeight = rpToolHeight + 2;
+    else rpHeight = rpOnHeight + 2;
+    //qDebug(qpos) << bnd.isSectionControlledByHeadland << "headland sections";
+
+    if (rpHeight > 290) rpHeight = 290;
+    if (rpHeight < 8) rpHeight = 8;
+
+    //read the whole block of pixels up to max lookahead, one read only
+    //pixels are already read in another thread.
+
+    //determine if headland is in read pixel buffer left middle and right.
+    int start = 0, end = 0, tagged = 0, totalPixel = 0;
+
+    //slope of the look ahead line
+    double mOn = 0, mOff = 0;
+
+    //tram and hydraulics
+    if (tram.displayMode > 0 && tool.width > CVehicle::instance()->trackWidth)
+    {
+        tram.controlByte = 0;
+        //1 pixels in is there a tram line?
+        if (tram.isOuter)
+        {
+            if (grnPixels[(int)(tram.halfWheelTrack * 10)].green == 245) tram.controlByte += 2;
+            if (grnPixels[tool.rpWidth - (int)(tram.halfWheelTrack * 10)].green == 245) tram.controlByte += 1;
+        }
+        else
+        {
+            if (grnPixels[tool.rpWidth / 2 - (int)(tram.halfWheelTrack * 10)].green == 245) tram.controlByte += 2;
+            if (grnPixels[tool.rpWidth / 2 + (int)(tram.halfWheelTrack * 10)].green == 245) tram.controlByte += 1;
+        }
+    }
+    else tram.controlByte = 0;
+
+    //determine if in or out of headland, do hydraulics if on
+    if (this->isHeadlandOn())
+    {
+        //calculate the slope
+        double m = (CVehicle::instance()->hydLiftLookAheadDistanceRight - CVehicle::instance()->hydLiftLookAheadDistanceLeft) / tool.rpWidth;
+        int height = 1;
+
+        for (int pos = 0; pos < tool.rpWidth; pos++)
+        {
+            height = (int)(CVehicle::instance()->hydLiftLookAheadDistanceLeft + (m * pos)) - 1;
+            for (int a = pos; a < height * tool.rpWidth; a += tool.rpWidth)
+            {
+                if (grnPixels[a].green == 250)
+                {
+                    isHeadlandClose = true;
+                    goto GetOutTool;
+                }
+            }
+        }
+
+    GetOutTool: //goto
+
+        //is the tool completely in the headland or not
+        bnd.isToolInHeadland = bnd.isToolOuterPointsInHeadland && !isHeadlandClose;
+
+        //set hydraulics based on tool in headland or not
+        bnd.SetHydPosition(static_cast<btnStates>(this->autoBtnState()), p_239, *CVehicle::instance());
+
+        //set hydraulics based on tool in headland or not
+        bnd.SetHydPosition(static_cast<btnStates>(this->autoBtnState()), p_239, *CVehicle::instance());
+
+    }
+
+    ///////////////////////////////////////////   Section control        ssssssssssssssssssssss
+
+    int endHeight = 1, startHeight = 1;
+
+    if (this->isHeadlandOn() && bnd.isSectionControlledByHeadland) bnd.WhereAreToolLookOnPoints(*CVehicle::instance(), tool);
+
+    for (int j = 0; j < tool.numOfSections; j++)
+    {
+        //Off or too slow or going backwards
+        if (tool.sectionButtonState[j] == btnStates::Off || CVehicle::instance()->avgSpeed < CVehicle::instance()->slowSpeedCutoff || tool.section[j].speedPixels < 0)
+        {
+            tool.section[j].sectionOnRequest = false;
+            tool.section[j].sectionOffRequest = true;
+
+            // Manual on, force the section On
+            if (tool.sectionButtonState[j] == btnStates::On)
+            {
+                tool.section[j].sectionOnRequest = true;
+                tool.section[j].sectionOffRequest = false;
+                continue;
+            }
+            continue;
+        }
+
+        // Manual on, force the section On
+        if (tool.sectionButtonState[j] == btnStates::On)
+        {
+            tool.section[j].sectionOnRequest = true;
+            tool.section[j].sectionOffRequest = false;
+            continue;
+        }
+
+
+        //AutoSection - If any nowhere applied, send OnRequest, if its all green send an offRequest
+        tool.section[j].isSectionRequiredOn = false;
+
+        //calculate the slopes of the lines
+        mOn = (tool.lookAheadDistanceOnPixelsRight - tool.lookAheadDistanceOnPixelsLeft) / tool.rpWidth;
+        mOff = (tool.lookAheadDistanceOffPixelsRight - tool.lookAheadDistanceOffPixelsLeft) / tool.rpWidth;
+
+        start = tool.section[j].rpSectionPosition - tool.section[0].rpSectionPosition;
+        end = tool.section[j].rpSectionWidth - 1 + start;
+
+        if (end >= tool.rpWidth)
+            end = tool.rpWidth - 1;
+
+        totalPixel = 1;
+        tagged = 0;
+
+        for (int pos = start; pos <= end; pos++)
+        {
+            startHeight = (int)(tool.lookAheadDistanceOffPixelsLeft + (mOff * pos)) * tool.rpWidth + pos;
+            endHeight = (int)(tool.lookAheadDistanceOnPixelsLeft + (mOn * pos)) * tool.rpWidth + pos;
+
+            for (int a = startHeight; a <= endHeight; a += tool.rpWidth)
+            {
+                totalPixel++;
+                if (grnPixels[a].green == 0) tagged++;
+            }
+        }
+
+        //determine if meeting minimum coverage
+        tool.section[j].isSectionRequiredOn = ((tagged * 100) / totalPixel > (100 - tool.minCoverage));
+
+        //logic if in or out of boundaries or headland
+        if (bnd.bndList.count() > 0)
+        {
+            //if out of boundary, turn it off
+            if (!tool.section[j].isInBoundary)
+            {
+                tool.section[j].isSectionRequiredOn = false;
+                tool.section[j].sectionOffRequest = true;
+                tool.section[j].sectionOnRequest = false;
+                tool.section[j].sectionOffTimer = 0;
+                tool.section[j].sectionOnTimer = 0;
+                continue;
+            }
+            else
+            {
+                //is headland coming up
+                if (this->isHeadlandOn() && bnd.isSectionControlledByHeadland)
+                {
+                    bool isHeadlandInLookOn = false;
+
+                    //is headline in off to on area
+                    mOn = (tool.lookAheadDistanceOnPixelsRight - tool.lookAheadDistanceOnPixelsLeft) / tool.rpWidth;
+                    mOff = (tool.lookAheadDistanceOffPixelsRight - tool.lookAheadDistanceOffPixelsLeft) / tool.rpWidth;
+
+                    start = tool.section[j].rpSectionPosition - tool.section[0].rpSectionPosition;
+
+                    end = tool.section[j].rpSectionWidth - 1 + start;
+
+                    if (end >= tool.rpWidth)
+                        end = tool.rpWidth - 1;
+
+                    tagged = 0;
+
+                    for (int pos = start; pos <= end; pos++)
+                    {
+                        startHeight = (int)(tool.lookAheadDistanceOffPixelsLeft + (mOff * pos)) * tool.rpWidth + pos;
+                        endHeight = (int)(tool.lookAheadDistanceOnPixelsLeft + (mOn * pos)) * tool.rpWidth + pos;
+
+                        for (int a = startHeight; a <= endHeight; a += tool.rpWidth)
+                        {
+                            if (a < 0)
+                                mOn = 0;
+                            if (grnPixels[a].green == 250)
+                            {
+                                isHeadlandInLookOn = true;
+                                goto GetOutHdOn;
+                            }
+                        }
+                    }
+                GetOutHdOn:
+
+                    //determine if look ahead points are completely in headland
+                    if (tool.section[j].isSectionRequiredOn && tool.section[j].isLookOnInHeadland && !isHeadlandInLookOn)
+                    {
+                        tool.section[j].isSectionRequiredOn = false;
+                        tool.section[j].sectionOffRequest = true;
+                        tool.section[j].sectionOnRequest = false;
+                    }
+
+                    if (tool.section[j].isSectionRequiredOn && !tool.section[j].isLookOnInHeadland && isHeadlandInLookOn)
+                    {
+                        tool.section[j].isSectionRequiredOn = true;
+                        tool.section[j].sectionOffRequest = false;
+                        tool.section[j].sectionOnRequest = true;
+                    }
+                }
+            }
+        }
+
+
+        //global request to turn on section
+        tool.section[j].sectionOnRequest = tool.section[j].isSectionRequiredOn;
+        tool.section[j].sectionOffRequest = !tool.section[j].sectionOnRequest;
+
+    }  // end of go thru all sections "for"
+
+    //Set all the on and off times based from on off section requests
+    for (int j = 0; j < tool.numOfSections; j++)
+    {
+        //SECTION timers
+
+        if (tool.section[j].sectionOnRequest) {
+            bool wasOn = tool.section[j].isSectionOn;
+            tool.section[j].isSectionOn = true;
+            // PHASE 6.0.36: sectionButtonState (user preference) should NOT be modified here
+            // Only isSectionOn (calculated state) changes - matches C# original architecture
+        }
+
+        //turn off delay
+        if (tool.turnOffDelay > 0)
+        {
+            if (!tool.section[j].sectionOffRequest) tool.section[j].sectionOffTimer = (int)(gpsHz / 2.0 * tool.turnOffDelay);
+
+            if (tool.section[j].sectionOffTimer > 0) tool.section[j].sectionOffTimer--;
+
+            if (tool.section[j].sectionOffRequest && tool.section[j].sectionOffTimer == 0)
+            {
+                if (tool.section[j].isSectionOn) {
+                    tool.section[j].isSectionOn = false;
+                    // PHASE 6.0.36: sectionButtonState (user preference) NOT modified
+                    // Only isSectionOn (calculated state) changes - matches C# original
+                }
+            }
+        }
+        else
+        {
+            if (tool.section[j].sectionOffRequest) {
+                bool wasOn = tool.section[j].isSectionOn;
+                tool.section[j].isSectionOn = false;
+                // PHASE 6.0.36: sectionButtonState (user preference) NOT modified here
+                // Only isSectionOn (calculated state) changes - matches C# original architecture
+                // sectionButtonState controlled ONLY by user actions: button clicks, Master Auto
+            }
+        }
+
+        //Mapping timers
+        if (tool.section[j].sectionOnRequest && !tool.section[j].isMappingOn && tool.section[j].mappingOnTimer == 0)
+        {
+            tool.section[j].mappingOnTimer = (int)(tool.lookAheadOnSetting * (gpsHz / 2) - 1);
+        }
+        else if (tool.section[j].sectionOnRequest && tool.section[j].isMappingOn && tool.section[j].mappingOffTimer > 1)
+        {
+            tool.section[j].mappingOffTimer = 0;
+            tool.section[j].mappingOnTimer = (int)(tool.lookAheadOnSetting * (gpsHz / 2) - 1);
+        }
+
+        if (tool.lookAheadOffSetting > 0)
+        {
+            if (tool.section[j].sectionOffRequest && tool.section[j].isMappingOn && tool.section[j].mappingOffTimer == 0)
+            {
+                tool.section[j].mappingOffTimer = (int)(tool.lookAheadOffSetting * (gpsHz / 2) + 4);
+            }
+        }
+        else if (tool.turnOffDelay > 0)
+        {
+            if (tool.section[j].sectionOffRequest && tool.section[j].isMappingOn && tool.section[j].mappingOffTimer == 0)
+                tool.section[j].mappingOffTimer = (int)(tool.turnOffDelay * gpsHz / 2);
+        }
+        else
+        {
+            tool.section[j].mappingOffTimer = 0;
+        }
+
+        //MAPPING - Not the making of triangle patches - only status - on or off
+        if (tool.section[j].sectionOnRequest)
+        {
+            tool.section[j].mappingOffTimer = 0;
+            if (tool.section[j].mappingOnTimer > 1)
+                tool.section[j].mappingOnTimer--;
+            else
+            {
+                tool.section[j].isMappingOn = true;
+            }
+        }
+
+        if (tool.section[j].sectionOffRequest)
+        {
+            tool.section[j].mappingOnTimer = 0;
+            if (tool.section[j].mappingOffTimer > 1)
+                tool.section[j].mappingOffTimer--;
+            else
+            {
+                tool.section[j].isMappingOn = false;
+            }
+        }
+    }
+
+    //Checks the workswitch or steerSwitch if required
+    if (ahrs.isAutoSteerAuto || mc.isRemoteWorkSystemOn)
+        mc.CheckWorkAndSteerSwitch(ahrs,isBtnAutoSteerOn());
+
+    // check if any sections have changed status
+    number = 0;
+
+    for (int j = 0; j < tool.numOfSections; j++)
+    {
+        if (tool.section[j].isMappingOn)
+        {
+            number |= 1ul << j;
+        }
+    }
+
+    //there has been a status change of section on/off
+    if (number != lastNumber)
+    {
+        int sectionOnOffZones = 0, patchingZones = 0;
+
+        //everything off
+        if (number == 0)
+        {
+            for (int j = 0; j < triStrip.count(); j++)
+            {
+                if (triStrip[j].isDrawing)
+                    triStrip[j].TurnMappingOff(tool, fd, mainWindow, this);
+            }
+        }
+        else if (!tool.isMultiColoredSections)
+        {
+            //set the start and end positions from section points
+            for (int j = 0; j < tool.numOfSections; j++)
+            {
+                //skip till first mapping section
+                if (!tool.section[j].isMappingOn) continue;
+
+                //do we need more patches created
+                if (triStrip.count() < sectionOnOffZones + 1)
+                    triStrip.append(CPatches());
+
+                //set this strip start edge to edge of this section
+                triStrip[sectionOnOffZones].newStartSectionNum = j;
+
+                while ((j + 1) < tool.numOfSections && tool.section[j + 1].isMappingOn)
+                {
+                    j++;
+                }
+
+                //set the edge of this section to be end edge of strp
+                triStrip[sectionOnOffZones].newEndSectionNum = j;
+                sectionOnOffZones++;
+            }
+
+            //count current patch strips being made
+            for (int j = 0; j < triStrip.count(); j++)
+            {
+                if (triStrip[j].isDrawing) patchingZones++;
+            }
+
+            //tests for creating new strips or continuing
+            bool isOk = (patchingZones == sectionOnOffZones && sectionOnOffZones < 3);
+
+            if (isOk)
+            {
+                for (int j = 0; j < sectionOnOffZones; j++)
+                {
+                    if (triStrip[j].newStartSectionNum > triStrip[j].currentEndSectionNum
+                        || triStrip[j].newEndSectionNum < triStrip[j].currentStartSectionNum)
+                        isOk = false;
+                }
+            }
+
+            if (isOk)
+            {
+                for (int j = 0; j < sectionOnOffZones; j++)
+                {
+                    if (triStrip[j].newStartSectionNum != triStrip[j].currentStartSectionNum
+                        || triStrip[j].newEndSectionNum != triStrip[j].currentEndSectionNum)
+                    {
+                        //if (tool.isSectionsNotZones)
+                        {
+                            triStrip[j].AddMappingPoint(tool,fd, 0, mainWindow, this);
+                        }
+
+                        triStrip[j].currentStartSectionNum = triStrip[j].newStartSectionNum;
+                        triStrip[j].currentEndSectionNum = triStrip[j].newEndSectionNum;
+                        triStrip[j].AddMappingPoint(tool,fd, 0, mainWindow, this);
+                    }
+                }
+            }
+            else
+            {
+                //too complicated, just make new strips
+                for (int j = 0; j < triStrip.count(); j++)
+                {
+                    if (triStrip[j].isDrawing)
+                        triStrip[j].TurnMappingOff(tool, fd, mainWindow, this);
+                }
+
+                for (int j = 0; j < sectionOnOffZones; j++)
+                {
+                    triStrip[j].currentStartSectionNum = triStrip[j].newStartSectionNum;
+                    triStrip[j].currentEndSectionNum = triStrip[j].newEndSectionNum;
+                    triStrip[j].TurnMappingOn(tool, 0);
+                }
+            }
+        }
+        else if (tool.isMultiColoredSections) //could be else only but this is more clear
+        {
+            //set the start and end positions from section points
+            for (int j = 0; j < tool.numOfSections; j++)
+            {
+                //do we need more patches created
+                if (triStrip.count() < sectionOnOffZones + 1)
+                    triStrip.append(CPatches());
+
+                //set this strip start edge to edge of this section
+                triStrip[sectionOnOffZones].newStartSectionNum = j;
+
+                //set the edge of this section to be end edge of strp
+                triStrip[sectionOnOffZones].newEndSectionNum = j;
+                sectionOnOffZones++;
+
+                if (!tool.section[j].isMappingOn)
+                {
+                    if (triStrip[j].isDrawing)
+                        triStrip[j].TurnMappingOff(tool, fd, mainWindow, this);
+                }
+                else
+                {
+                    triStrip[j].currentStartSectionNum = triStrip[j].newStartSectionNum;
+                    triStrip[j].currentEndSectionNum = triStrip[j].newEndSectionNum;
+                    triStrip[j].TurnMappingOn(tool,j);
+                }
+            }
+        }
+
+
+        lastNumber = number;
+    }
+
+    //send the byte out to section machines
+    BuildMachineByte();
+
+    //if a minute has elapsed save the field in case of crash and to be able to resume
+    if (minuteCounter > 30 && this->sentenceCounter() < 20)
+    {
+        // Phase 2.4: No longer need to stop timer - saves are now fast (< 50ms)
+        // tmrWatchdog->stop();  // REMOVED - buffered saves don't block GPS
+
+        //don't save if no gps
+        if (isJobStarted())
+        {
+            //auto save the field patches, contours accumulated so far
+            FileSaveSections();  // Now < 50ms with buffering
+            FileSaveContour();   // Now < 50ms with buffering
+
+            //NMEA log file
+            //TODO: if (isLogElevation) FileSaveElevation(;
+            //ExportFieldAs_KML(;
+        }
+
+        //if its the next day, calc sunrise sunset for next day
+        minuteCounter = 0;
+
+        //set saving flag off
+        isSavingFile = false;
+
+        // Phase 2.4: No longer need to restart timer
+        // tmrWatchdog->start();  // REMOVED - timer never stopped
+
+        //calc overlap
+        //oglZoom.Refresh(;
+
+    }
+
+    if (isJobStarted())
+    {
+        p_239.pgn[p_239.geoStop] = this->isOutOfBounds() ? 1 : 0;
+
+        // SendPgnToLoop(p_239.pgn;  // âŒ REMOVED - Phase 4.6: AgIOService Workers handle PGN
+
+        // SendPgnToLoop(p_229.pgn;  // âŒ REMOVED - Phase 4.6: Use AgIOService.sendPgn() instead
+        if (m_agioService) {
+            m_agioService->sendPgn(p_239.pgn);
+            m_agioService->sendPgn(p_229.pgn);
+        }
+    }
+
+#ifdef USE_QPAINTER_BACKBUFFER
+    qWarning() << "After threaded back buffer drawing, section lookahead finished at " << swFrame.elapsed();
+    }, Qt::QueuedConnection);
+    });
+#endif
+
+    //lock.unlock(;
+
+    //this is the end of the "frame". Now we wait for next NMEA sentence with a valid fix.
+}
 
 
 void FormGPS::CalculatePositionHeading()
@@ -1640,7 +2424,7 @@ void FormGPS::CalculatePositionHeading()
     static int latencyLogCounter = 0;
     if (++latencyLogCounter % 500 == 0) { // Log every 500 updates (~10s at 50Hz actual frequency)
         double actualHz = 1000000000.0 / intervalBetweenCalls; // Convert ns to Hz
-        qDebug() << "📊 UpdateFixPosition - Interval:" << intervalBetweenCalls/1000000 << "ms"
+        qDebug(qpos) << "📊 UpdateFixPosition - Interval:" << intervalBetweenCalls/1000000 << "ms"
                  << "Actual Hz:" << actualHz << "GPS Hz:" << gpsHz;
     }
 
@@ -1783,7 +2567,7 @@ void FormGPS::CalculateSectionLookAhead(double northing, double easting, double 
 
     //speed max for section kmh*0.277 to m/s * 10 cm per pixel * 1.7 max speed
     double meterPerSecPerPixel = fabs(CVehicle::instance()->avgSpeed) * 4.5;
-    //qDebug() << pn.speed << ", m/s per pixel is " << meterPerSecPerPixel;
+    //qDebug(qpos) << pn.speed << ", m/s per pixel is " << meterPerSecPerPixel;
 
     //now loop all the section rights and the one extreme left
     for (int j = 0; j < tool.numOfSections; j++)
@@ -1802,7 +2586,7 @@ void FormGPS::CalculateSectionLookAhead(double northing, double easting, double 
             //get the speed for left side only once
 
             leftSpeed = left.getLength() * gpsHz * 10;
-            //qDebug() << leftSpeed << " - left speed";
+            //qDebug(qpos) << leftSpeed << " - left speed";
             if (leftSpeed > meterPerSecPerPixel) leftSpeed = meterPerSecPerPixel;
         }
         else
@@ -1821,7 +2605,7 @@ void FormGPS::CalculateSectionLookAhead(double northing, double easting, double 
         tool.section[j].rightPoint = Vec2(cosHeading * (tool.section[j].positionRight) + easting,
                                           sinHeading * (tool.section[j].positionRight) + northing);
         /*
-        qDebug() << j << ": " << tool.section[j].leftPoint.easting << "," <<
+        qDebug(qpos) << j << ": " << tool.section[j].leftPoint.easting << "," <<
                                  tool.section[j].leftPoint.northing <<" " <<
                                  tool.section[j].rightPoint.easting << ", " <<
                                  tool.section[j].rightPoint.northing;
@@ -2118,7 +2902,7 @@ void FormGPS::onParsedDataReady(const PGNParser::ParsedData& data)
         // GPS fix INVALID (quality=0 or satellites=0)
         // Don't update position/altitude/hdop/age → preserve last valid values
         // This prevents display from jumping to 0 when GPS signal lost momentarily
-        qDebug() << "❌ GPS fix INVALID - quality:" << data.quality
+        qDebug(qpos) << "❌ GPS fix INVALID - quality:" << data.quality
                  << "satellites:" << data.satellites
                  << "→ preserving last valid position";
     }

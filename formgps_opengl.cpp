@@ -3,6 +3,10 @@
 //
 // Main loop OpenGL stuff
 //#include <QtOpenGL>
+#include <QOpenGLVertexArrayObject>
+#include <QOpenGLFunctions>
+#include <QOpenGLShaderProgram>
+#include <QOpenGLBuffer>
 #include <assert.h>
 #include "formgps.h"
 #include "csection.h"
@@ -14,18 +18,56 @@
 #include "aogrenderer.h"
 #include "cnmea.h"
 #include "qmlutil.h"
+#include "glm.h"
+#include "glutils.h"
+#include "qmlutil.h"
+#include "classes/agioservice.h"  // For zero-latency GPS access
+#include "classes/settingsmanager.h"
+#include "cpgn.h"
+
+#include <assert.h>
+#include <QElapsedTimer>  // For latency profiling
+
+#include <QLabel>
+
+Q_LOGGING_CATEGORY (qgl, "formgps_opengl.qtagopengps")
+
+extern QLabel *overlapPixelsWindow;
+extern QOpenGLShaderProgram *interpColorShader; //pull from glutils.h
 
 // Helper function to safely get OpenGL control properties with defaults
 struct OpenGLViewport {
+    QOpenGLContext *context = nullptr;
     int width = 800;
     int height = 600;
     double shiftX = 0.0;
     double shiftY = 0.0;
 };
 
+struct DrawElementsIndirectCommand {
+    GLuint count;         // Number of indices
+    GLuint instanceCount; // Number of instances
+    GLuint firstIndex;    // Offset in index buffer
+    GLuint baseVertex;    // Added to each index
+    GLuint baseInstance;  // Base instance for instanced attributes
+};
+
+#define PATCHBUFFER_LENGTH 16 * 1024 * 1024 //16 MB
+#define VERTEX_SIZE sizeof(ColorVertex) //combined vertex and color, 7 floats
+
+QOpenGLContext *getGLContext(QQuickWindow *window) {
+    auto *ri = window->rendererInterface();
+    if (ri->graphicsApi() == QSGRendererInterface::OpenGL) {
+        return static_cast<QOpenGLContext *>(
+            ri->getResource(window, QSGRendererInterface::OpenGLContextResource));
+    }
+    return nullptr; // Not using OpenGL
+}
+
 OpenGLViewport getOpenGLViewport(QObject* mainWindow) {
     OpenGLViewport viewport;
     QObject *openglControl = qmlItem(mainWindow, "openglcontrol");
+
 
     if (openglControl) {
         viewport.width = openglControl->property("width").toReal();
@@ -33,6 +75,7 @@ OpenGLViewport getOpenGLViewport(QObject* mainWindow) {
         // ✅ PHASE 6.3.0 FIX: shiftX/shiftY are now Q_PROPERTY in AOGRendererInSG
         viewport.shiftX = openglControl->property("shiftX").toDouble();
         viewport.shiftY = openglControl->property("shiftY").toDouble();
+        viewport.context = getGLContext(qobject_cast<QQuickItem *>(openglControl)->window());
     } else {
         qWarning() << "⚠️ OpenGL control not found - using default viewport settings";
         // Defaults already set in struct definition
@@ -40,22 +83,8 @@ OpenGLViewport getOpenGLViewport(QObject* mainWindow) {
 
     return viewport;
 }
-#include "glm.h"
-#include "glutils.h"
-#include "qmlutil.h"
-#include "classes/agioservice.h"  // For zero-latency GPS access
-
-//#include <QGLWidget>
-#include <QQuickView>
-#include <QOpenGLFunctions>
-#include <QOpenGLShaderProgram>
-#include <QOpenGLBuffer>
-#include "classes/settingsmanager.h"
-#include "cpgn.h"
-
-#include <assert.h>
-#include <QElapsedTimer>  // For latency profiling
-
+/*
+*/
 // Latency profiler for real-time validation
 class LatencyProfiler {
 public:
@@ -187,7 +216,7 @@ QVector3D FormGPS::mouseClickToField(int mouseX, int mouseY)
     return fieldCoord;
 }
 
-void FormGPS::oglMain_Paint()
+void FormGPS::render_main_fbo()
 {
     QOpenGLContext *glContext = QOpenGLContext::currentContext();
     QOpenGLFunctions *gl = glContext->functions();
@@ -196,44 +225,129 @@ void FormGPS::oglMain_Paint()
     QMatrix4x4 projection;
     QMatrix4x4 modelview;
     QColor color;
-    GLHelperTexture gldrawtex;
-    GLHelperColors gldrawcolors;
-    GLHelperOneColor gldraw1;
+    GLHelperTextureBack gldrawtex;
+    //GLHelperOneColorBack gldrawtex;
 
-    //if (newframe)
-    //    qDebug() << "start of new frame, waiting for lock at " << swFrame.elapsed();
-    //synchronize with the position code in the main thread
-    if (!lock.tryLockForRead())
-        //if there's no new position to draw, just return so we don't
-        //waste time redrawing.  Frame rate is at most gpsHz.  And if we
-        //need to redraw part of the window on a resize, it will just have
-        //to wait until the next position comes in.  Although if there is
-        //no simulator running and no positions coming in, the GL background
-        //will not update, which isn't what we want either.  Some kind of timeout?
-     return;
+    initializeBackShader();
 
-    float lineWidth = SettingsManager::instance()->display_lineWidth();
-    
+    // Set The Blending Function For Translucency
+    gl->glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    gl->glCullFace(GL_BACK);
+
+    gl->glEnable(GL_BLEND);
+    gl->glClearColor(0.25122f, 0.258f, 0.275f, 1.0f);
+    gl->glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    gl->glDisable(GL_DEPTH_TEST);
+
+    modelview.setToIdentity();
+    projection.setToIdentity();
+
     // Safe access to OpenGL viewport properties
     OpenGLViewport viewport = getOpenGLViewport(mainWindow);
     int width = viewport.width;
     int height = viewport.height;
     double shiftX = viewport.shiftX;
     double shiftY = viewport.shiftY;
-    //gl->glViewport(oglX,oglY,width,height);
-    /*
-#ifdef GL_POINT_SPRITE
-    //not compatible with OpenGL ES
-    gl->glEnable(GL_POINT_SPRITE);
+
+    //gl->glViewport(0,0,width,height);
+    //qDebug(qgl) << "viewport is " << width << height;
+
+    if (active_fbo >= 0) {
+
+        gl->glActiveTexture(GL_TEXTURE0);
+        gl->glBindTexture(GL_TEXTURE_2D, mainFBO[active_fbo]->texture());
+
+        //qDebug(qgl) << "Texture is " << overPix.size();
+        //QOpenGLTexture texture = QOpenGLTexture(grnPix.mirrored(false, true));
+        //texture.bind();
+
+
+        gldrawtex.append( { QVector3D(1, 1, 0), QVector2D(1,1) } ); //Top Right
+        gldrawtex.append( { QVector3D(-1, 1, 0), QVector2D(0,1) } ); //Top Left
+        gldrawtex.append( { QVector3D(1, -1, 0), QVector2D(1,0) } ); //Bottom Right
+        gldrawtex.append( { QVector3D(-1, -1, 0), QVector2D(0,0) } ); //Bottom Left
+        /*
+        gldrawtex.append( QVector3D(0.75, 0.75, 0)); //Top Right
+        gldrawtex.append( QVector3D(-0.75, 0.75, 0)); //Top Left
+        gldrawtex.append( QVector3D(0.75, -0.75, 0)); //Bottom Right
+        gldrawtex.append( QVector3D(-0.75, -0.75, 0)); //Bottom Left
+        */
+
+        gldrawtex.draw(gl, projection * modelview, GL_TRIANGLE_STRIP, false);
+        //gldrawtex.draw(gl, projection * modelview, QColor::fromRgb(255,0,0), GL_LINE_STRIP, 1.0f );
+        //texture.release();
+        gl->glBindTexture(GL_TEXTURE_2D, 0); //unbind the texture
+        //texture.destroy();
+    }
+    gl->glFlush();
+}
+
+void FormGPS::oglMain_Paint()
+{
+    OpenGLViewport viewport = getOpenGLViewport(mainWindow);
+#if !defined(Q_OS_WINDOWS) && !defined(Q_OS_ANDROID)
+    //if there's no context we need to create one because
+    //the qml renderer is in a different thread.
+    if (!mainOpenGLContext.isValid()) {
+        if (viewport.context)
+            mainOpenGLContext.setShareContext(viewport.context);
+        mainOpenGLContext.create();
+    }
 #endif
-    */
-#ifdef GL_PROGRAM_POINT_SIZE
-    //not required on OpenGL ES
-    gl->glEnable(GL_PROGRAM_POINT_SIZE);
+    QMatrix4x4 projection;
+    QMatrix4x4 modelview;
+    QColor color;
+    GLHelperTexture gldrawtex;
+    GLHelperColors gldrawcolors;
+    GLHelperOneColor gldraw1;
+
+    float lineWidth = SettingsManager::instance()->display_lineWidth();
+    
+    // Safe access to OpenGL viewport properties
+    int width = viewport.width;
+    int height = viewport.height;
+    double shiftX = viewport.shiftX;
+    double shiftY = viewport.shiftY;
+    //gl->glViewport(oglX,oglY,width,height);
+    //qDebug(qgl) << "viewport is " << width << height;
+
+#if !defined(Q_OS_WINDOWS) && !defined(Q_OS_ANDROID)
+    if (!mainSurface.isValid()) {
+        QSurfaceFormat format = mainOpenGLContext.format();
+        mainSurface.setFormat(format);
+        mainSurface.create();
+        auto r = mainSurface.isValid();
+        qDebug(qgl) << "main surface creation: " << r;
+    }
+
+    auto result = mainOpenGLContext.makeCurrent(&mainSurface);
+
+    QOpenGLFunctions *gl = mainOpenGLContext.functions();
+#else
+    QOpenGLContext *glContext = QOpenGLContext::currentContext();
+    QOpenGLFunctions *gl = glContext->functions();
 #endif
 
-    //Do stuff that was in the initialized method, since Qt uses OpenGL and may
-    //have messed with the matrix stuff and other defaults
+    initializeTextures();
+    initializeShaders();
+
+#if !defined(Q_OS_WINDOWS) && !defined(Q_OS_ANDROID)
+    //we will work on the unused texture in case QML is rendering on
+    //another core
+    int working_fbo = (active_fbo < 0 ? 0 : active_fbo + 1 % 1);
+
+
+    if (!mainFBO[working_fbo] || mainFBO[working_fbo]->size() != QSize(width,height)) {
+        QOpenGLFramebufferObjectFormat format;
+        format.setAttachment(QOpenGLFramebufferObject::CombinedDepthStencil);
+        // ✅ C++17 RAII: automatic memory management, no manual delete needed
+        mainFBO[working_fbo].reset(new QOpenGLFramebufferObject(QSize(width,height), format));
+    }
+
+    mainFBO[working_fbo]->bind();
+
+    mainOpenGLContext.functions()->glViewport(0,0,width,height);
+#endif
 
     // Set The Blending Function For Translucency
     gl->glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -271,6 +385,7 @@ void FormGPS::oglMain_Paint()
     gl->glDisable(GL_DEPTH_TEST);
     //gl->glDisable(GL_TEXTURE_2D);
 
+    int currentPatchBuffer = 0;
 
     if(this->sentenceCounter() < 299)
     {
@@ -311,72 +426,261 @@ void FormGPS::oglMain_Paint()
             gl->glEnable(GL_BLEND);
             //draw patches of sections
 
+            if (patchesBufferDirty) {
+                //destroy all GPU patches buffers
+                patchBuffer.clear();
+                patchesInBuffer.clear();
+
+                for (int j = 0; j < triStrip.count(); j++) {
+                    patchesInBuffer.append(QVector<PatchInBuffer>());
+                    for (int k=0; k < triStrip[j].patchList.size()-1 ; k++) {
+                        patchesInBuffer[j].append({ -1, -1, -1});
+                    }
+                }
+
+                patchBuffer.append( { QOpenGLBuffer(), 0} );
+                patchBuffer[0].patchBuffer.create();
+                patchBuffer[0].patchBuffer.bind();
+                patchBuffer[0].patchBuffer.allocate(PATCHBUFFER_LENGTH); //16 MB
+                patchBuffer[0].patchBuffer.release();
+                if (!patchesInBuffer.count()) {
+                    patchesInBuffer.append(QVector<PatchInBuffer>());
+                    patchesInBuffer[0].append({ -1, -1, -1});
+                }
+                currentPatchBuffer = 0;
+
+                patchesBufferDirty = false;
+            } else {
+                currentPatchBuffer = patchBuffer.count() - 1;
+            }
+
+            bool draw_patch = false;
+            //int total_vertices = 0;
+
+            //initialize the steps for mipmap of triangles (skipping detail while zooming out)
+            int mipmap = 0;
+            if (camera.camSetDistance < -800) mipmap = 2;
+            if (camera.camSetDistance < -1500) mipmap = 4;
+            if (camera.camSetDistance < -2400) mipmap = 8;
+            if (camera.camSetDistance < -5000) mipmap = 16;
+
+            if (mipmap > 1)
+                qDebug(qgl) << "mipmap is" << mipmap;
+
+            //QVector<GLuint> indices;
+            //indices.reserve(PATCHBUFFER_LENGTH / 28 * 3);  //enough to index 16 MB worth of vertices
+            QVector<QVector<GLuint>> indices2;
+            for (int i=0; i < patchBuffer.size(); i++) {
+                indices2.append(QVector<GLuint>());
+                indices2[i].reserve(PATCHBUFFER_LENGTH / 28 * 3);
+            }
+
+            bool enough_indices = false;
+
+            //draw patches j= # of sections
             for (int j = 0; j < triStrip.count(); j++)
             {
                 //every time the section turns off and on is a new patch
-                bool isDraw;
+                int patchCount = triStrip[j].patchList.size();
 
-                int patches = triStrip[j].patchList.size();
+                for (int k=0; k < patchCount; k++) {
+                    QSharedPointer<PatchTriangleList> triList = triStrip[j].patchList[k];
+                    QVector3D *triListRaw = triList->data();
+                    int count2 = triList->size();
+                    //total_vertices += count2;
+                    draw_patch = false;
 
-                if (patches > 0)
-                {
-                    //initialize the steps for mipmap of triangles (skipping detail while zooming out)
-                    /* Unused since we use the triangle lists directly with the buffers
-                    int mipmap = 0;
-                    if (camera.camSetDistance < -800) mipmap = 2;
-                    if (camera.camSetDistance < -1500) mipmap = 4;
-                    if (camera.camSetDistance < -2400) mipmap = 8;
-                    if (camera.camSetDistance < -4800) mipmap = 16;
-                    */
-
-                    //for every new chunk of patch
-                    for (QSharedPointer<PatchTriangleList> &triList: triStrip[j].patchList)
+                    draw_patch = false;
+                    for (int i = 1; i < count2; i += 3) //first vertice is color
                     {
-                        isDraw = false;
-                        int count2 = triList->size();
-                        for (int i = 1; i < count2; i += 3) //first vertice is color
-                        {
-                            //determine if point is in frustum or not, if < 0, its outside so abort, z always is 0
-                            //x is easting, y is northing
-                            if (frustum[0] * (*triList)[i].x() + frustum[1] * (*triList)[i].y() + frustum[3] <= 0)
-                                continue;//right
-                            if (frustum[4] * (*triList)[i].x() + frustum[5] * (*triList)[i].y() + frustum[7] <= 0)
-                                continue;//left
-                            if (frustum[16] * (*triList)[i].x() + frustum[17] * (*triList)[i].y() + frustum[19] <= 0)
-                                continue;//bottom
-                            if (frustum[20] * (*triList)[i].x() + frustum[21] * (*triList)[i].y() + frustum[23] <= 0)
-                                continue;//top
-                            if (frustum[8] * (*triList)[i].x() + frustum[9] * (*triList)[i].y() + frustum[11] <= 0)
-                                continue;//far
-                            if (frustum[12] * (*triList)[i].x() + frustum[13] * (*triList)[i].y() + frustum[15] <= 0)
-                                continue;//near
+                        //determine if point is in frustum or not, if < 0, its outside so abort, z always is 0
+                        //x is easting, y is northing
+                        if (frustum[0] * triListRaw[i].x() + frustum[1] * triListRaw[i].y() + frustum[3] <= 0)
+                            continue;//right
+                        if (frustum[4] * triListRaw[i].x() + frustum[5] * triListRaw[i].y() + frustum[7] <= 0)
+                            continue;//left
+                        if (frustum[16] * triListRaw[i].x() + frustum[17] * triListRaw[i].y() + frustum[19] <= 0)
+                            continue;//bottom
+                        if (frustum[20] * triListRaw[i].x() + frustum[21] * triListRaw[i].y() + frustum[23] <= 0)
+                            continue;//top
+                        if (frustum[8] * triListRaw[i].x() + frustum[9] * triListRaw[i].y() + frustum[11] <= 0)
+                            continue;//far
+                        if (frustum[12] * triListRaw[i].x() + frustum[13] * triListRaw[i].y() + frustum[15] <= 0)
+                            continue;//near
 
-                            //point is in frustum so draw the entire patch. The downside of triangle strips.
-                            isDraw = true;
-                            break;
+                        //point is in frustum so draw the entire patch. The downside of triangle strips.
+                        draw_patch = true;
+                        break;
+                    }
+
+                    if (!draw_patch) continue;
+                    color.setRgbF((*triList)[0].x(), (*triList)[0].y(), (*triList)[0].z(), 0.596 );
+
+                    if (k == patchCount - 1) {
+                        //If this is the last patch in the list, it's currently being worked on
+                        //so we don't save this one.
+                        QOpenGLBuffer triBuffer;
+
+                        triBuffer.create();
+                        triBuffer.bind();
+
+                        //triangle lists are now using QVector3D, so we can allocate buffers
+                        //directly from list data.
+
+                        //first vertice is color, so we should skip it
+                        triBuffer.allocate(triList->data() + 1, (count2-1) * sizeof(QVector3D));
+                        //triBuffer.allocate(triList->data(), count2 * sizeof(QVector3D));
+                        triBuffer.release();
+
+                        //draw the triangles in each triangle strip
+                        glDrawArraysColor(gl,projection*modelview,
+                                          GL_TRIANGLE_STRIP, color,
+                                          triBuffer,GL_FLOAT,count2-1);
+
+                        triBuffer.destroy();
+                        //qDebug(qgl) << "Last patch, not cached.";
+                        continue;
+                    } else {
+                        if (j >= patchesInBuffer.size())
+                            patchesInBuffer.append(QVector<PatchInBuffer>());
+                        if (k >= patchesInBuffer[j].size())
+                            patchesInBuffer[j].append({ -1, -1, -1});
+
+                        if (patchesInBuffer[j][k].which == -1) {
+                            //patch is not in one of the big buffers yet, so allocate it.
+                            if ((patchBuffer[currentPatchBuffer].length + (count2-1) * VERTEX_SIZE) >= PATCHBUFFER_LENGTH ) {
+                                //add a new buffer because the current one is full.
+                                currentPatchBuffer ++;
+                                patchBuffer.append( { QOpenGLBuffer(), 0 });
+                                patchBuffer[currentPatchBuffer].patchBuffer.create();
+                                patchBuffer[currentPatchBuffer].patchBuffer.bind();
+                                patchBuffer[currentPatchBuffer].patchBuffer.allocate(PATCHBUFFER_LENGTH); //4MB
+                                patchBuffer[currentPatchBuffer].patchBuffer.release();
+                                indices2.append(QVector<GLuint>());
+                                indices2[currentPatchBuffer].reserve(PATCHBUFFER_LENGTH / 28 * 3);
+                            }
+
+                            //there's room for it in the current patch buffer
+                            patchBuffer[currentPatchBuffer].patchBuffer.bind();
+                            QVector<ColorVertex> temp_patch;
+                            temp_patch.reserve(count2-1);
+                            for (int i=1; i < count2; i++) {
+                                temp_patch.append( { triListRaw[i], QVector4D(triListRaw[0], 0.596) } );
+                            }
+                            patchBuffer[currentPatchBuffer].patchBuffer.write(patchBuffer[currentPatchBuffer].length,
+                                                                              temp_patch.data(),
+                                                                              (count2-1) * VERTEX_SIZE);
+                            patchesInBuffer[j][k].which = currentPatchBuffer;
+                            patchesInBuffer[j][k].offset = patchBuffer[currentPatchBuffer].length / VERTEX_SIZE;
+                            patchesInBuffer[j][k].length = count2 - 1;
+                            patchBuffer[currentPatchBuffer].length += (count2 - 1) * VERTEX_SIZE;
+                            qDebug(qgl) << "buffering" << j << k << patchesInBuffer[j][k].which << ", " << patchBuffer[currentPatchBuffer].length;
+                            patchBuffer[currentPatchBuffer].patchBuffer.release();
                         }
+                        //generate list of indices for this patch
+                        int index_offset = patchesInBuffer[j][k].offset;
+                        int which_buffer = patchesInBuffer[j][k].which;
 
-                        if (isDraw)
-                        {
-                            color.setRgbF((*triList)[0].x(), (*triList)[0].y(), (*triList)[0].z(), 0.596 );
-                            //QVector<QVector3D> vertices;
-                            QOpenGLBuffer triBuffer;
+                        int step = mipmap;
+                        if (count2 - 1 < mipmap + 2) {
+                            for (int i = 1; i < count2 - 2 ; i ++)
+                            {
+                                if (i % 2) {  //preserve winding order
+                                    indices2[which_buffer].append(i-1 + index_offset);
+                                    indices2[which_buffer].append(i   + index_offset);
+                                    indices2[which_buffer].append(i+1 + index_offset);
+                                } else {
+                                    indices2[which_buffer].append(i-1 + index_offset);
+                                    indices2[which_buffer].append(i+1   + index_offset);
+                                    indices2[which_buffer].append(i + index_offset);
+                                }
 
-                            triBuffer.create();
-                            triBuffer.bind();
+                            }
+                        } else {
+                            //use mipmap to make fewer triangles
+                            int last_index2 = indices2[which_buffer].count();
 
-                            //triangle lists are now using QVector3D, so we can allocate buffers
-                            //directly from list data.
-                            triBuffer.allocate(triList->data() + 1, (count2-1) * sizeof(QVector3D));
-                            triBuffer.release();
+                            int vertex_count = 0;
+                            for (int i=1; i < count2; i += step) {
+                                //convert triangle strip to triangles
+                                if (vertex_count > 2 ) { //even, normal winding
+                                    indices2[which_buffer].append(indices2[which_buffer][last_index2 - 1]);
+                                    indices2[which_buffer].append(indices2[which_buffer][last_index2 - 2]);
+                                    last_index2+=3;
+                                } else {
+                                    last_index2 ++;
+                                }
+                                indices2[which_buffer].append(i-1 + index_offset);
 
-                            glDrawArraysColor(gl,projection*modelview,
-                                              GL_TRIANGLE_STRIP, color,
-                                              triBuffer,GL_FLOAT,count2-1);
+                                i++;
+                                vertex_count++;
 
-                            triBuffer.destroy();
+                                if (vertex_count > 2) { //odd, reverse winding
+                                    indices2[which_buffer].append(indices2[which_buffer][last_index2 - 2]);
+                                }
+                                indices2[which_buffer].append(i-1 + index_offset);
+
+                                if (vertex_count > 2) {
+                                    indices2[which_buffer].append(indices2[which_buffer][last_index2 - 1 ]);
+                                    last_index2 += 3;
+                                } else {
+                                    last_index2 ++;
+                                }
+                                i++;
+                                vertex_count++;
+
+                                if (count2 - i <= (mipmap + 2))
+                                    //too small to mipmap, so add each one
+                                    //individually.
+                                    step = 0;
+                            }
+                        }
+                        if (indices2[which_buffer].count() > 2)
+                            enough_indices = true;
+                    }
+                }
+
+                qDebug(qgl) << "time after preparing patches for drawing" << swFrame.nsecsElapsed() / 1000000;
+
+                if (enough_indices) {
+                    interpColorShader->bind();
+                    interpColorShader->setUniformValue("mvpMatrix", projection*modelview);
+                    interpColorShader->setUniformValue("pointSize", 0.0f);
+
+                    //glDrawElements needs a vertex array object to hold state
+                    QOpenGLVertexArrayObject vao;
+                    vao.create();
+                    vao.bind();
+
+                    //create ibo
+                    QOpenGLBuffer ibo{QOpenGLBuffer::IndexBuffer};
+                    ibo.create();
+
+                    for (int i=0; i < indices2.count(); i++) {
+                        if (indices2[i].count() > 2) {
+                            patchBuffer[i].patchBuffer.bind();
+
+                            //set up vertex positions in buffer for the shader
+                            gl->glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 7 * sizeof(float), nullptr); //3D vector
+                            gl->glEnableVertexAttribArray(0);
+
+                            gl->glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 7 * sizeof(float), reinterpret_cast<void*>(3 * sizeof(float))); //color
+                            gl->glEnableVertexAttribArray(1);
+
+
+                            ibo.bind();
+                            ibo.allocate(indices2[i].data(), indices2[i].size() * sizeof(GLuint));
+
+                            gl->glDrawElements(GL_TRIANGLES, indices2[i].count(), GL_UNSIGNED_INT, nullptr);
+                            patchBuffer[i].patchBuffer.release();
+
+                            ibo.release();
                         }
                     }
+                    ibo.destroy();
+                    vao.release();
+                    vao.destroy();
+                    interpColorShader->release();
                 }
             }
 
@@ -423,12 +727,16 @@ void FormGPS::oglMain_Paint()
                 }
             }
 
+            //qDebug(qgl) << "total vertices is "<< total_vertices;
+
+            qDebug(qgl) << "time after painting patches " << (float)swFrame.nsecsElapsed() / 1000000;
+
             if (tram.displayMode != 0) tram.DrawTram(gl,projection*modelview,camera);
 
             //draw contour line if button on
             if (this->isContourBtnOn())
             {
-                ct.DrawContourLine(gl, projection*modelview, mainWindow);
+                ct.DrawContourLine(gl, projection*modelview, mainWindow, swFrame);
             }
             else// draw the current and reference AB Lines or CurveAB Ref and line
             {
@@ -438,9 +746,10 @@ void FormGPS::oglMain_Paint()
 
             track.DrawTrackNew(gl, projection*modelview, camera, *CVehicle::instance());
 
-            //if (recPath.isRecordOn)
-            recPath.DrawRecordedLine(gl, projection*modelview);
-            recPath.DrawDubins(gl, projection*modelview);
+            if (recPath.isRecordOn) {
+                recPath.DrawRecordedLine(gl, projection*modelview);
+                recPath.DrawDubins(gl, projection*modelview);
+            }
 
             if (bnd.bndList.count() > 0 || bnd.isBndBeingMade == true)
             {
@@ -533,8 +842,6 @@ void FormGPS::oglMain_Paint()
             //RTK age implemented in QML
             //guidance line text implemented in QML
 
-            gl->glFlush();
-
             //draw the zoom window
             // ⚡ PHASE 6.3.0 SAFETY: Verify InterfaceProperty before OpenGL access
             bool jobStartedSafe = false;
@@ -561,16 +868,6 @@ void FormGPS::oglMain_Paint()
         {
             gl->glClear(GL_COLOR_BUFFER_BIT);
         }
-
-        //directly call section lookahead GL stuff from here
-        if (! newframe) {
-            //No new position, so no need to repaint the back buffer
-            //and do section look-ahead
-            lock.unlock();
-            //qWarning() << "rendered but skipping section lookahead processing.";
-            return;
-        }
-        gl->glFlush();
 
     }
     else
@@ -610,12 +907,27 @@ void FormGPS::oglMain_Paint()
 
         drawText(gl,projection * modelview,edge,height - 240, "<-- AgIO ?",1.0,true,color);
 
-        gl->glFlush();
 
         //GUI widgets have to be updated elsewhere
     }
-    lock.unlock();
-    newframe = false;
+
+    gl->glFlush();
+    qDebug() << "End of all main rendering" << swFrame.elapsed();
+
+    /*
+    if (SettingsManager::instance()->display_showBack()) {
+        overPix = mainFBO[working_fbo]->toImage().convertToFormat(QImage::Format_RGBX8888);
+        qDebug(qgl) << "image size is: " << overPix.size();
+        overlapPixelsWindow->setPixmap(QPixmap::fromImage(overPix));
+    }
+    */
+#if !defined(Q_OS_WINDOWS) && !defined(Q_OS_ANDROID)
+
+    mainFBO[working_fbo]->bindDefault();
+
+    //tell GUI to swich to new texture;
+    active_fbo = working_fbo;
+#endif
 }
 
 /// Handles the OpenGLInitialized event of the openGLControl control.
@@ -626,46 +938,19 @@ void FormGPS::openGLControl_Initialized()
     //qmlview->resetOpenGLState();
 
     //Load all the textures
-    //qDebug() << "initializing Open GL.";
-    initializeTextures();
-    //qDebug() << "textures loaded.";
-    initializeShaders();
-    //qDebug() << "shaders loaded.";
+    //qDebug(qgl) << "initializing Open GL.";
+    //initializeTextures();
+    //qDebug(qgl) << "textures loaded.";
+    //initializeShaders();
+    //qDebug(qgl) << "shaders loaded.";
 
-    /*
-    //load shaders, memory managed by parent thread, which is in this case,
-    //the QML rendering thread, not the Qt main loop.
-    if (!simpleColorShader) {
-        simpleColorShader = new QOpenGLShaderProgram(QThread::currentThread()); //memory managed by Qt
-        assert(simpleColorShader->addShaderFromSourceFile(QOpenGLShader::Vertex, ":/shaders/color_vshader.vsh"));
-        assert(simpleColorShader->addShaderFromSourceFile(QOpenGLShader::Fragment, ":/shaders/color_fshader.fsh"));
-        assert(simpleColorShader->link());
-    }
-    if (!texShader) {
-        texShader = new QOpenGLShaderProgram(QThread::currentThread()); //memory managed by Qt
-        assert(texShader->addShaderFromSourceFile(QOpenGLShader::Vertex, ":/shaders/colortex_vshader.vsh"));
-        assert(texShader->addShaderFromSourceFile(QOpenGLShader::Fragment, ":/shaders/colortex_fshader.fsh"));
-        assert(texShader->link());
-    }
-    if (!interpColorShader) {
-        interpColorShader = new QOpenGLShaderProgram(QThread::currentThread()); //memory managed by Qt
-        assert(interpColorShader->addShaderFromSourceFile(QOpenGLShader::Vertex, ":/shaders/colors_vshader.vsh"));
-        assert(interpColorShader->addShaderFromSourceFile(QOpenGLShader::Fragment, ":/shaders/colors_fshader.fsh"));
-        assert(interpColorShader->link());
-    }
-    */
-
-    //now start the timer assuming no errors, otherwise the program will not stop on errors.
-    //TODO:
-    //tmrWatchdog.Enabled = true;
-    //qmlview->resetOpenGLState();
 }
 
 void FormGPS::openGLControl_Shutdown()
 {
 
-    //qDebug() << "OpenGL shutting down... destroying buffers and shaders";
-    //qDebug() << QOpenGLContext::currentContext();
+    //qDebug(qgl) << "OpenGL shutting down... destroying buffers and shaders";
+    //qDebug(qgl) << QOpenGLContext::currentContext();
     //We should have a valid OpenGL context here so we can clean up shaders and buffers
     destroyShaders();
     destroyTextures();
@@ -677,11 +962,29 @@ void FormGPS::openGLControl_Shutdown()
 void FormGPS::oglBack_Paint()
 {
 
-    QOpenGLContext *glContext = QOpenGLContext::currentContext();
+    //QOpenGLContext *glContext = QOpenGLContext::currentContext();
     QMatrix4x4 projection;
     QMatrix4x4 modelview;
 
     GLHelperOneColorBack gldraw;
+
+    GLint oldviewport[4];
+
+    //if there's no context we need to create one because
+    //the qml renderer is in a different thread.
+    if (!backOpenGLContext.isValid()) {
+        backOpenGLContext.create();
+    }
+
+    if (!backSurface.isValid()) {
+        QSurfaceFormat format = backOpenGLContext.format();
+        backSurface.setFormat(format);
+        backSurface.create();
+        auto r = backSurface.isValid();
+        qDebug(qgl) << "back surface creation: " << r;
+    }
+
+    auto result = backOpenGLContext.makeCurrent(&backSurface);
 
     initializeBackShader(); //compiler the shader we need if necessary
 
@@ -696,8 +999,14 @@ void FormGPS::oglBack_Paint()
     }
 
     backFBO->bind();
-    glContext->functions()->glViewport(0,0,500,300);
-    QOpenGLFunctions *gl = glContext->functions();
+
+    //save current viewport settings in case it conflicts with QML
+    GLint origview[4];
+    backOpenGLContext.functions()->glGetIntegerv(GL_VIEWPORT, origview);
+
+
+    backOpenGLContext.functions()->glViewport(0,0,500,300);
+    QOpenGLFunctions *gl = backOpenGLContext.functions();
 
     //int width = glContext->surface()->size().width();
     //int height = glContext->surface()->size().height();
@@ -843,17 +1152,19 @@ void FormGPS::oglBack_Paint()
     //finish it up - we need to read the ram of video card
     gl->glFlush();
 
+    qDebug(qgl) << "Time after drawing back buffer: " << swFrame.elapsed();
+
     //read the whole block of pixels up to max lookahead, one read only
     //we'll use Qt's QImage function to grab it.
     grnPix = backFBO->toImage().mirrored().convertToFormat(QImage::Format_RGBX8888);
-    //qDebug() << grnPix.size();
+    qDebug(qgl) << "Time after glReadPixels: " << swFrame.elapsed();
+    //qDebug(qgl) << grnPix.size();
     //QImage temp = grnPix.copy(tool.rpXPosition, 250, tool.rpWidth, 290 /*(int)rpHeight*/);
     //TODO: is thisn right?
     QImage temp = grnPix.copy(tool.rpXPosition, 0, tool.rpWidth, 290 /*(int)rpHeight*/);
     temp.setPixelColor(0,0,QColor::fromRgb(255,128,0));
-    grnPix = temp; //only show clipped image
+    //grnPix = temp; //only show clipped image
     memcpy(grnPixels, temp.constBits(), temp.size().width() * temp.size().height() * 4);
-    //grnPix = temp;
 
     //first channel
     if (worldGrid.numRateChannels > 0)
@@ -886,7 +1197,10 @@ void FormGPS::oglBack_Paint()
     //broken out into a callback in formgps.cpp called
     //processSectionLookahead().
 
-    glContext->functions()->glFlush();
+    backOpenGLContext.functions()->glFlush();
+
+    //restore viewport
+    backOpenGLContext.functions()->glViewport(origview[0], origview[1], origview[2], origview[3]);
 
     //restore QML's context
     backFBO->bindDefault();
@@ -1016,7 +1330,7 @@ void FormGPS::MakeFlagMark(QOpenGLFunctions *gl)
     uchar data1[768];
     memset(data1,0,768);
 
-    qDebug() << "mouse down at " << mouseX << ", " << mouseY;
+    qDebug(qgl) << "mouse down at " << mouseX << ", " << mouseY;
     //scan the center of click and a set of square points around
     gl->glReadPixels(mouseX - 8, mouseY - 8, 16, 16, GL_RGB, GL_UNSIGNED_BYTE, data1);
 
@@ -1031,10 +1345,10 @@ void FormGPS::MakeFlagMark(QOpenGLFunctions *gl)
             // Validate flag number is within bounds
             if (candidateFlag > 0 && candidateFlag <= flagPts.size()) {
                 flagNumberPicked = candidateFlag;
-                qDebug() << "Valid flag picked:" << flagNumberPicked;
+                qDebug(qgl) << "Valid flag picked:" << flagNumberPicked;
             } else {
                 flagNumberPicked = 0; // Invalid flag, reset to no selection
-                qDebug() << "Invalid flag number" << candidateFlag << "- flagPts.size():" << flagPts.size();
+                qDebug(qgl) << "Invalid flag number" << candidateFlag << "- flagPts.size():" << flagPts.size();
             }
             break;
         }

@@ -15,6 +15,8 @@ class CYouTurn;
 class CTool;
 class CAHRS;
 class CNMEA;
+class QElapsedTimer;
+class QOpenGLBuffer;
 
 class CContour: public QObject
 {
@@ -22,9 +24,13 @@ class CContour: public QObject
 private:
     int A = 0, B = 0, C = 0;
     int stripNum, lastLockPt = INT_MAX;
+    int oldStripNum = -1;
     int counter2;
     double lastSecond;
     int pt = 0;
+
+    bool stripListBuffersDirty = true;
+    QVector<QOpenGLBuffer> stripListBuffers;
 
 public:
     bool isContourOn=false;
@@ -70,7 +76,7 @@ public:
     void AddPoint(Vec3 pivot);
     void StopContourLine(QVector<QSharedPointer<QVector<Vec3>>> &contourSaveList);
     void BuildFenceContours(CBoundary &bnd, double spacingInt, int patchCounter);
-    void DrawContourLine(QOpenGLFunctions *gl, const QMatrix4x4 &mvp, QObject *mainWindow);
+    void DrawContourLine(QOpenGLFunctions *gl, const QMatrix4x4 &mvp, QObject *mainWindow, QElapsedTimer &swFrame);
     void ResetContour();
 signals:
     //void guidanceLineDistanceOff(int);

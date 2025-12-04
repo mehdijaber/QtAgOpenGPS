@@ -3,6 +3,7 @@
 
 #include <math.h>
 #include <limits>
+#include <QMatrix4x4>
 #include <QVector>
 #include "vec2.h"
 #include "vecfix2fix.h"
@@ -351,5 +352,31 @@ namespace glm {
         return 0 <= innerProduct && innerProduct <= dx * dx + dy * dy;
     }
 
+    inline static QPointF backbuffer_world_to_screen(QMatrix4x4 &mvp, QVector3D input) {
+        QVector4D temp = QVector4D(input,1.0);
+        temp = mvp * temp;
+        temp.setX(temp.x() / temp.w() * 250 + 250);
+        temp.setY(150 - temp.y() / temp.w() * 150);
+
+        return QPointF(temp.x(), temp.y());
+    }
+
+    inline static QPointF backbuffer_world_to_screen(QMatrix4x4 &mvp, Vec2 input) {
+        QVector4D temp = QVector4D(input.easting, input.northing, 0, 1.0);
+        temp = mvp * temp;
+        temp.setX(temp.x() / temp.w() * 250 + 250);
+        temp.setY(150 - temp.y() / temp.w() * 150);
+
+        return QPointF(temp.x(), temp.y());
+    }
+
+    inline static QPointF backbuffer_world_to_screen(QMatrix4x4 &mvp, Vec3 input) {
+        QVector4D temp = QVector4D(input.easting, input.northing, 0, 1.0);
+        temp = mvp * temp;
+        temp.setX(temp.x() / temp.w() * 250 + 250);
+        temp.setY(150 - temp.y() / temp.w() * 150);
+
+        return QPointF(temp.x(), temp.y());
+    }
 }
 #endif // GLM_H
