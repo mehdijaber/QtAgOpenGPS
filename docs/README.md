@@ -40,7 +40,7 @@ For detailed architecture documentation, see the [work_doc/](../work_doc/) direc
 ## Project Information
 
 - **Repository**: [github.com/mehdijaber/QtAgOpenGPS](https://github.com/mehdijaber/QtAgOpenGPS)
-- **Original Project**: [AgOpenGPS by Brian Tischler](https://github.com/farmerbriantee/AgOpenGPS)
+- **Original Project**: [AgOpenGPS Official](https://github.com/AgOpenGPS-Official/AgOpenGPS)
 - **Upstream Qt Port**: [QtAgOpenGPS by torriem](https://github.com/torriem/QtAgOpenGPS)
 - **Qt Version**: 6.8+
 - **Language**: C++17
