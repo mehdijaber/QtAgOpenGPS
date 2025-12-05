@@ -13,12 +13,6 @@ Documentation for developers contributing to QtAgOpenGPS or building custom feat
 
 - [Android Development](android-development.md) - Android build process and platform-specific considerations
 
-## Architecture References
-
-For detailed architecture documentation, see:
-- [work_doc/ARCHITECTURE_COMPLETE_QTAOG.md](../../work_doc/ARCHITECTURE_COMPLETE_QTAOG.md) - Complete architecture overview
-- [work_doc/QML_BACKEND_ARCHITECTURE_COMPLETE.md](../../work_doc/QML_BACKEND_ARCHITECTURE_COMPLETE.md) - QML and C++ integration
-
 ## Development Workflow
 
 1. Create feature branch from `new_dev`
@@ -27,8 +21,17 @@ For detailed architecture documentation, see:
 4. Submit pull request with description
 5. Address review feedback
 
+## Code Standards
+
+- Language: C++17
+- Framework: Qt 6.8+
+- Build System: CMake 3.22+
+- QML: Qt Quick 6.8
+- Property System: Q_OBJECT_BINDABLE_PROPERTY
+- Threading: Main thread + worker threads for I/O
+
 ## Getting Help
 
-- Check existing documentation in [work_doc/](../../work_doc/)
+- Check existing documentation in this docs/ folder
 - Open an issue for questions or bugs
 - Join discussions for design questions

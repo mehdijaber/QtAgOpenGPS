@@ -14,11 +14,11 @@ Additional technical guides will be added covering:
 - Field boundary management
 - Section control implementation
 - Real-time communication protocols
-
-## Architecture Documentation
-
-For comprehensive architecture documentation, see [work_doc/](../../work_doc/) which contains:
-- Phase 6.0.x migration analyses
-- Threading and timer architecture
 - Memory management and optimization
-- Protocol references (NMEA, PGN)
+- Threading architecture
+
+## Related Documentation
+
+- [Protocol References](../reference/) - NMEA and PGN protocol specifications
+- [Development Guides](../development/) - Building and contributing
+- [Getting Started](../getting-started/) - Installation and setup
