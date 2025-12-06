@@ -418,4 +418,16 @@ All code, comments, documentation, commit messages, issues, and PRs MUST be in E
 - [GitHub Discussions](https://github.com/mehdijaber/QtAgOpenGPS/discussions) - Questions and design discussions
 - [GitHub Issues](https://github.com/mehdijaber/QtAgOpenGPS/issues) - Bug reports and feature requests
 
+## Acknowledgments
+
+QtAgOpenGPS builds on the work of many contributors:
+
+- Brian Tischler for the original AgOpenGPS
+- Michael Torrie (torriem) for the initial Qt port
+- Muhktimar (tamirscn@gmail.com) for Qt port contributions
+- David Wedel (Davidwedel) for contributions to the Qt port
+- Artem (vrartem) for contributions to the Qt port
+- GruniUdm for contributions to the Qt port
+- AgOpenGPS community for ongoing support
+
 Thank you for contributing to QtAgOpenGPS!
