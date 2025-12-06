@@ -22,9 +22,16 @@ Contributing to QtAgOpenGPS or building custom features:
 
 ## Technical Guides
 
-In-depth technical documentation:
+In-depth technical documentation organized by domain:
 
-- [Scenegraph Architecture](guides/scenegraph.md) - OpenGL rendering and Qt Scenegraph
+- **[Architecture Guides](guides/architecture/)** - System architecture, threading, QML integration, Qt 6.8 migration
+- **[Protocol References](guides/protocols/)** - NMEA/PGN architecture and integration
+- **[Development Guides](guides/development/)** - Profiling, memory debugging, QML optimization
+- **[Implementation References](guides/implementation/)** - Case studies of major refactorings (AgIOService, threading, memory leaks)
+- **[Specialized Analysis](guides/analysis/)** - Performance baselines, protocol analysis, theoretical foundations
+- **[Architectural Proposals](guides/proposals/)** - Pending architectural decisions (status tracking)
+
+For complete guide index, see [guides/README.md](guides/README.md)
 
 ## Reference
 
@@ -32,10 +39,6 @@ Technical reference documentation:
 
 - [NMEA Sentences](reference/nmea-sentences.md) - NMEA protocol reference
 - [PGN Sentences](reference/pgn-sentences.md) - PGN protocol reference
-
-## Architecture Documentation
-
-For detailed architecture documentation, see the [work_doc/](../work_doc/) directory which contains Phase 6.0.x migration analyses and technical architecture documents.
 
 ## Project Information
 

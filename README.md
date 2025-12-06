@@ -6,17 +6,26 @@ Note!
 ==========
 I haven't compiled for Windows in awhile. If this branch ever won't compile on Windows, contact me, or have a go at it yourself!
 
-Dev Notes
-----------
-Developer how-to has been moved to the [wiki](https://github.com/torriem/qtagopengps/wiki)
+Documentation
+-------------
+Complete documentation is available in the [docs/](docs/) directory:
+
+- [Installation Guides](docs/getting-started/) - Windows, Linux, and Android installation
+- [Development Guides](docs/development/) - Building, contributing, and development workflow
+- [Technical Guides](docs/guides/) - In-depth technical documentation
+- [Protocol References](docs/reference/) - NMEA and PGN protocol specifications
+
+Quick Start:
+- [Windows Installation](docs/getting-started/installation-windows.md)
+- [Linux Installation](docs/getting-started/installation-linux.md)
+- [Contributing Guidelines](docs/development/contributing.md)
 
 What is QtAgOpenGPS?
 --------------------
-QtAgOpenGPS is a direct port of Brian Tischler's [AgOpenGPS](https://github.com/farmerbriantee/AgOpenGPS), which was originally
-written in C#.  This port aims to follow AgOpenGPS closely, and not
-introduce any new algorithms or significant architecture modifications,
-except as required to work with Qt and C++.  Currently it's not quite
-up to the latest commits on Brian's C# AOG, but nearly so.
+QtAgOpenGPS is a Qt 6.8/C++17 port of [AgOpenGPS](https://github.com/AgOpenGPS-Official/AgOpenGPS), originally
+written in C#. This port aims to follow AgOpenGPS closely while adapting to Qt/C++ patterns and modern
+Qt 6.8 architecture (QProperty/BINDABLE system). This fork (mehdijaber/QtAgOpenGPS) is based on
+[torriem's Qt port](https://github.com/torriem/QtAgOpenGPS) with ongoing modernization and improvements.
 
 Quoting the README.me for AgOpenGPS:
 
@@ -55,9 +64,12 @@ remains GPLv3 for now.
 
 Requirements
 ------------
-QtAOG requires Qt 6.0 or newer to build, on any Qt-supported platform
-that supports OpenGL ES 2 or newer, or DirectX on Windows.
-It also requires cmake 3.22 or newer.
+- Qt 6.8 or newer
+- CMake 3.22 or newer (3.27 recommended)
+- C++17 compiler (MSVC 2022, GCC 11+, or Clang 11+)
+- OpenGL ES 2.0+ or DirectX (Windows)
+
+See [installation guides](docs/getting-started/) for platform-specific requirements.
 
 Why this Port?
 --------------
