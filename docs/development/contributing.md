@@ -423,11 +423,11 @@ All code, comments, documentation, commit messages, issues, and PRs MUST be in E
 QtAgOpenGPS builds on the work of many contributors:
 
 - Brian Tischler for the original AgOpenGPS
-- Michael Torrie (torriem) for the initial Qt port
-- Muhktimar (tamirscn@gmail.com) for Qt port contributions
-- David Wedel (Davidwedel) for contributions to the Qt port
-- Artem (vrartem) for contributions to the Qt port
-- GruniUdm for contributions to the Qt port
+- Michael Torrie ([torriem](https://github.com/torriem)) for the initial Qt port
+- Muhktimar for Qt port contributions
+- David Wedel ([Davidwedel](https://github.com/Davidwedel)) for contributions to the Qt port
+- Artem ([vrartem](https://github.com/vrartem)) for contributions to the Qt port
+- [GruniUdm](https://github.com/GruniUdm) for contributions to the Qt port
 - AgOpenGPS community for ongoing support
 
 Thank you for contributing to QtAgOpenGPS!

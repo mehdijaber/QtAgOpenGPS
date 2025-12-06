@@ -94,8 +94,8 @@ QtAgOpenGPS is a Qt port of the agricultural precision mapping software AgOpenGP
 
 **Copyright**:
 - Original AgOpenGPS: Brian Tischler (2016-2017)
-- Qt Port: Michael Torrie (torriem@gmail.com)
-- Qt Port contributions: Muhktimar (tamirscn@gmail.com)
+- Qt Port: Michael Torrie ([torriem](https://github.com/torriem))
+- Qt Port contributions: Muhktimar, David Wedel ([Davidwedel](https://github.com/Davidwedel)), Artem ([vrartem](https://github.com/vrartem)), [GruniUdm](https://github.com/GruniUdm)
 - Current Fork: Mehdi Jaber
 
 See [LICENSE](LICENSE) for full license text.
@@ -113,8 +113,9 @@ Contributions welcome! See [Contributing Guidelines](docs/development/contributi
 ## Acknowledgments
 
 - Brian Tischler for the original AgOpenGPS
-- Michael Torrie (torriem) for the initial Qt port
-- David Wedel (Davidwedel) for contributions to the Qt port
-- Artem (vrartem) for contributions to the Qt port
-- GruniUdm for contributions to the Qt port
+- Michael Torrie ([torriem](https://github.com/torriem)) for the initial Qt port
+- Muhktimar for contributions to the Qt port
+- David Wedel ([Davidwedel](https://github.com/Davidwedel)) for contributions to the Qt port
+- Artem ([vrartem](https://github.com/vrartem)) for contributions to the Qt port
+- [GruniUdm](https://github.com/GruniUdm) for contributions to the Qt port
 - AgOpenGPS community for ongoing support
