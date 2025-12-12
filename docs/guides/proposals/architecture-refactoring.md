@@ -154,7 +154,7 @@ Item {
 
 ### Problem 6: Static Functions Opportunity
 
-**Daniel's discussion**: "Most of the program only has a single instance - like a PGN is a readonly static object. As are most functions. Faster as well."
+**Brian and Daniel's discussion**: "Most of the program only has a single instance - like a PGN is a readonly static object. As are most functions. Faster as well."
 
 **Current pattern**:
 ```cpp

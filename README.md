@@ -1,130 +1,121 @@
-QtAgOpenGPS
-===========
-Ag Precision Mapping and Section Control Software
+# QtAgOpenGPS
 
-Note!
-==========
-I haven't compiled for Windows in awhile. If this branch ever won't compile on Windows, contact me, or have a go at it yourself!
+![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)
+![Qt Version](https://img.shields.io/badge/Qt-6.8%2B-brightgreen)
+![C++ Standard](https://img.shields.io/badge/C%2B%2B-17-blue)
+![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20Android-lightgrey)
 
-Dev Notes
-----------
-Developer how-to has been moved to the [wiki](https://github.com/torriem/qtagopengps/wiki)
+> Agricultural precision mapping and section control software
 
-What is QtAgOpenGPS?
---------------------
-QtAgOpenGPS is a direct port of Brian Tischler's [AgOpenGPS](https://github.com/farmerbriantee/AgOpenGPS), which was originally
-written in C#.  This port aims to follow AgOpenGPS closely, and not
-introduce any new algorithms or significant architecture modifications,
-except as required to work with Qt and C++.  Currently it's not quite
-up to the latest commits on Brian's C# AOG, but nearly so.
+## Overview
 
-Quoting the README.me for AgOpenGPS:
+QtAgOpenGPS is a Qt 6.8/C++17 port of AgOpenGPS, an agricultural precision mapping and guidance system for field operations. This fork focuses on modernizing the codebase with Qt 6.8 architecture patterns, including the QProperty/BINDABLE system for automatic QML property binding.
 
-"This project is for my personal use only, and has no commercial value
-whatsoever. This software is not for sale, is incomplete, is in
-development to show concepts only and is mostly non functional. Any
-use of this software is not recommended and is intended for simulation
-only.
+The project provides GPS-based field guidance, section control (up to 8 sections), AB line following, and auto-steer hardware integration. The architecture has been refactored for improved thread safety, memory efficiency, and real-time performance. The AgIOService component handles all hardware I/O coordination, including GPS modules, RTK corrections via NTRIP, and section/auto-steer control modules.
 
-This software reads NMEA strings for the purpose of recording and
-mapping position information for Agricultural use. Also it has up to 8
-Section Control to control implements application of product preventing
-over-application.
+This is a work in progress. Core functionality is operational with the built-in simulator, and hardware integration is complete. UI refinement and some C# AOG features remain in development.
 
-Also ouputs angle delta and distance from reference line for AB line
-and Contour guidance."
+## Documentation
 
-Eventually the other utilities in AOG will be ported, including the
-NMEA simulator.
+Complete documentation is available in the [docs/](docs/) directory:
 
-This application is distributed here in source code form only. I will
-post demo binaries outside of this tree somewhere.
+- [Installation Guides](docs/getting-started/) - Windows, Linux, and Android installation
+- [Development Guides](docs/development/) - Building, contributing, and development workflow
+- [Technical Guides](docs/guides/) - In-depth technical documentation
+- [Protocol References](docs/reference/) - NMEA and PGN protocol specifications
 
-Copyright
----------
-Much of the code is copied straight from the AOG C Sharp sources and is
-therefore copyright Brian Tischler.  Everything else is copyright 
-Michael Torrie (torriem@gmail.com) and Muhktimar (tamirscn@gmail.com).
+Quick Start:
+- [Windows Installation](docs/getting-started/installation-windows.md)
+- [Linux Installation](docs/getting-started/installation-linux.md)
+- [Contributing Guidelines](docs/development/contributing.md)
 
-License
--------
-AOG was originally licensed under the GPLv3, so this port was also 
-licensed under the GPLv3.  AOG has since been relicensed to the MIT
-license, which is still compatible with the GPLv3, so this project
-remains GPLv3 for now.
+## Project Status
 
-Requirements
-------------
-QtAOG requires Qt 6.0 or newer to build, on any Qt-supported platform
-that supports OpenGL ES 2 or newer, or DirectX on Windows.
-It also requires cmake 3.22 or newer.
+**Current Phase**: 6.0.45+ (Qt 6.8 Migration & Modernization)
 
-Why this Port?
---------------
-This port is mainly for my own entertainment, to allow me to run AOG
-on Linux, including SBCs like the Raspberry Pi.  But I think the 
-most desirable target will be Android some day.
+**Working**:
+- GPS position tracking (NMEA/PGN protocols)
+- Field management (boundaries, AB lines, coverage tracking)
+- Section control (up to 8 sections for product application)
+- Auto-steer hardware integration (serial communication)
+- RTK corrections (NTRIP client)
+- Built-in simulator for testing
 
-Notes on the Port
------------------
-This port is as close to a 1:1 transliteration of the C# code as
-possible, using Qt to drive the GUI, and C++ and Qt together to replace
-the C# GUI components.  Being such a direct translation, the code has
-a very C# feel to it, even in C++.  There are lots of classes that are
-only instantiated once, and the formgps.h is very large, and the
-coupling between the various classes is extremely tight.  In fact there
-are a lot of forward references to the main FormGPS class.  Since
-formgps.h is required by just about class in the project, changes to
-formgps.h require a rebuild of every single object file.
+**Known Limitations**:
+- UI refinement in progress (functional but not polished)
+- QtAgIO connection recovery requires manual restart on connection failure
+- Some features from C# AgOpenGPS not yet ported
 
-Earlier I changed the case of methods to be more standard C++. I've
-started to undo that and make the method calls as close to AOG's
-original names as possible.
+**Recent Achievements**:
+- **Phase 6.0.45**: 91% memory leak reduction (32.96 MB → 2.93 MB)
+- **Phase 6.0.24**: Thread architecture refactoring (main thread + specialized workers)
+- **Phase 6.0.19**: SettingsManager modernization (389 bindable properties)
 
-Most variables, functions, and methods, retain the AOG names, unless
-architectural differences require moving code into different sections.
-For example, the OpenGL code runs in a different thread than the main
-GUI loop, the logic to set UI state has been pulled out of the function
-that does the actual drawing.  Also since QtQuick itself uses OpenGL
-heavily, there's no point in having an "intializeGL" routine; rather
-each time we draw the frame we have to set all the variables including
-the model view and perspective matrices.  Of course in OpenGL ES we
-must manage those matrices ourselves anyway.
+See [docs/guides/proposals/](docs/guides/proposals/) for pending architectural decisions.
 
-QtAgIO Notes
--------------
-QtAgIO only works with UDP. The GUI is only half done.
-Note that the loopback
-ports are changed to 17770 and 15550, instead of 17777 and 15555 like AOG,
-so we can run with AOG on the same device. If you change back to 17777, and 
-15555, (in the settings.ini), you can run QtAOG with Brian's AgIO, and vice versa.
+## Requirements
 
-The network flow is not all correct yet. There is no "try to reconnect" code
-right now. If you didn't connect the first time, you have to restart QtAgIO.
+- Qt 6.8 or newer
+- CMake 3.22+ (3.27 recommended)
+- C++17 compiler (MSVC 2022, GCC 11+, or Clang 11+)
+- OpenGL ES 2.0+ or DirectX (Windows)
 
-Status of the Port
-------------------
-As of Jan 4, 2023, the backend code is now tracking pretty closely to the
-progress being made on AgOpenGPS/isoxml branch, at least as of Dec 20,
-2023.
+Platform-specific requirements: [Installation Guides](docs/getting-started/)
 
-UI is still mostly non-present, but works with the built-in simulator.
-For testing purposes, a job and field is automatically started, and a 
-demo AB line is defined at 5 degrees.  You should be able to copy 
-Boundary.txt, Sections.txt, ABLines.txt, etc from AgOpenGPS into the
-QtAgOpenGS/Fields/TestField folder and work with previously-saved
-data.
+## Quick Build
 
-Coverage works, boundaries work, u-turn works, automatic u-turn works (but
-has no button to enable it).  AB Line following works. Headland mode works.
+```bash
+# Configure
+cmake -B build -S . -DCMAKE_BUILD_TYPE=Release
 
-Bugs and TODOs
---------------
-- GL font drawing has issues, but only with the AB Line number display.  
-  A lot of UI stuff currently drawn with GL should be drawn with QML
-  widgets instead.
-- Dashed lines are not possible in OpenGL ES, but I think a shader script
-  can do it.  Also there's no easy way to do thick lines in opengl ES either.
-- Hook in the GUI that David Wedel is contributing.
+# Build
+cmake --build build --config Release
 
-----------------
+# Development with live QML editing
+cmake -B build -S . -DLOCAL_QML=ON
+```
+
+See [Building Guide](docs/development/building.md) for detailed instructions.
+
+## History
+
+QtAgOpenGPS is a Qt port of the agricultural precision mapping software AgOpenGPS:
+
+1. **Original**: [AgOpenGPS](https://github.com/AgOpenGPS-Official/AgOpenGPS) by Brian Tischler (C#)
+2. **Qt Port**: [QtAgOpenGPS](https://github.com/torriem/QtAgOpenGPS) by Michael Torrie (torriem)
+3. **Current Fork**: QtAgOpenGPS by Mehdi Jaber
+   - Focus: Qt 6.8 modernization
+   - Architecture: QProperty/BINDABLE system
+   - Ongoing improvements and refactoring
+
+## Copyright & License
+
+**License**: GNU General Public License v3 (GPLv3)
+
+**Copyright**:
+- Original AgOpenGPS: Brian Tischler (2016-2017)
+- Qt Port: Michael Torrie ([torriem](https://github.com/torriem))
+- Qt Port contributions: Muhktimar, David Wedel ([Davidwedel](https://github.com/Davidwedel)), Artem ([vrartem](https://github.com/vrartem)), [GruniUdm](https://github.com/GruniUdm)
+- Current Fork: Mehdi Jaber
+
+See [LICENSE](LICENSE) for full license text.
+
+## Contributing
+
+Contributions welcome! See [Contributing Guidelines](docs/development/contributing.md).
+
+**Communication**:
+- Issues: [GitHub Issues](https://github.com/mehdijaber/QtAgOpenGPS/issues)
+- Discussions: [GitHub Discussions](https://github.com/mehdijaber/QtAgOpenGPS/discussions)
+
+**Language Policy**: All code, comments, documentation, and communication in English.
+
+## Acknowledgments
+
+- Brian Tischler for the original AgOpenGPS
+- Michael Torrie ([torriem](https://github.com/torriem)) for the initial Qt port
+- Muhktimar for contributions to the Qt port
+- David Wedel ([Davidwedel](https://github.com/Davidwedel)) for contributions to the Qt port
+- Artem ([vrartem](https://github.com/vrartem)) for contributions to the Qt port
+- [GruniUdm](https://github.com/GruniUdm) for contributions to the Qt port
+- AgOpenGPS community for ongoing support
