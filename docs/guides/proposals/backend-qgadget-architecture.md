@@ -222,6 +222,124 @@ private:
 
 ---
 
+## Business Logic Integration Pattern
+
+### Problem: Circular Dependencies
+
+Backend needs to call business logic methods in FormGPS, but we cannot include `formgps.h` in `backend.h` without creating circular dependencies and long compile times.
+
+### Solution: QMetaObject::invokeMethod (Recommended by Michael)
+
+Backend holds a **generic QObject pointer** to the core business logic (FormGPS) and uses **dynamic method invocation** via Qt's meta-object system.
+
+#### Pattern Implementation
+
+**Step 1: Add Core Pointer to Backend**
+```cpp
+// backend.h
+class Backend : public QObject
+{
+    Q_OBJECT
+    Q_PROPERTY(QObject* core READ core WRITE setCore NOTIFY coreChanged)
+
+public:
+    QObject* core() const { return m_core; }
+    void setCore(QObject* core) { m_core = core; emit coreChanged(); }
+
+    // Q_INVOKABLE methods call into core without knowing its type
+    Q_INVOKABLE void startFieldOperation() {
+        if (m_core) {
+            QMetaObject::invokeMethod(m_core, "startFieldOperation");
+        }
+    }
+
+    Q_INVOKABLE void saveField(const QString& name) {
+        if (m_core) {
+            QMetaObject::invokeMethod(m_core, "saveField",
+                                     Q_ARG(QString, name));
+        }
+    }
+
+signals:
+    void coreChanged();
+
+private:
+    QObject* m_core = nullptr;  // Points to FormGPS instance
+};
+```
+
+**Step 2: Configure in main.cpp**
+```cpp
+// main.cpp
+int main() {
+    // Create singletons
+    FormGPS* formGPS = FormGPS::instance();
+    Backend* backend = Backend::instance();
+
+    // Connect Backend to FormGPS (no header inclusion needed)
+    backend->setCore(formGPS);
+
+    // Now QML can call: Backend.startFieldOperation()
+    // which dynamically calls: FormGPS::startFieldOperation()
+}
+```
+
+**Step 3: Implement Well-Documented Methods in FormGPS**
+```cpp
+// formgps.h
+class FormGPS : public QObject
+{
+    Q_OBJECT
+
+public:
+    // Well-documented Q_INVOKABLE methods for Backend to call
+    Q_INVOKABLE void startFieldOperation();
+    Q_INVOKABLE void saveField(const QString& name);
+    Q_INVOKABLE void loadField(const QString& filename);
+
+    // Internal C++ state (NOT exposed to Backend)
+private:
+    std::vector<Vec3> m_fieldPoints;      // Pure C++ calculation
+    QByteArray m_pgnBuffer;               // Parsing buffer
+    ComplexCalculationEngine m_engine;    // Business logic
+};
+```
+
+### Benefits of This Pattern
+
+1. **No Circular Dependencies**: Backend.h doesn't include formgps.h
+2. **Fast Compile Times**: Changing FormGPS internals doesn't trigger Backend recompile
+3. **Type Safety**: Qt meta-object system validates method signatures at runtime
+4. **Clear Interface**: Q_INVOKABLE methods document the Backend↔Core contract
+5. **Testability**: Easy to mock core object for Backend unit tests
+
+### Performance Cost
+
+- **Overhead**: ~10-50 nanoseconds per `invokeMethod()` call
+- **Impact**: Negligible for UI interactions (user clicks, navigation)
+- **Trade-off**: Massive compile-time savings worth minimal runtime cost
+
+### Alternative: Signal-Based Approach (Not Recommended)
+
+```cpp
+// Alternative approach - more verbose, less direct
+class Backend : public QObject {
+    Q_INVOKABLE void startFieldOperation() {
+        emit fieldOperationRequested();  // Emit signal
+    }
+signals:
+    void fieldOperationRequested();
+};
+
+// Requires connection in main.cpp
+connect(Backend::instance(), &Backend::fieldOperationRequested,
+        FormGPS::instance(), &FormGPS::startFieldOperation);
+```
+
+**Verdict**: QMetaObject::invokeMethod is cleaner and more maintainable for this use case.
+
+---
+
 ## Alternatives Considered
 
 ### Alternative 1: Keep Current Flat Structure
@@ -283,15 +401,33 @@ private:
 **Tasks**:
 1. Create `backend/` subdirectory in project root
 2. Implement Backend singleton with QML_ELEMENT + QML_SINGLETON
-3. Configure qt_add_qml_module() in CMakeLists.txt
-4. Test Backend singleton accessible in QML
+3. Add `core` property (QObject*) for FormGPS integration
+4. Implement basic Q_INVOKABLE methods using QMetaObject::invokeMethod
+5. Configure qt_add_qml_module() in CMakeLists.txt
+6. Wire Backend→FormGPS connection in main.cpp
+7. Test Backend singleton accessible in QML
 
 **Files**:
-- `backend/backend.h`
+- `backend/backend.h` (minimal, UI data only)
 - `backend/backend.cpp`
 - `CMakeLists.txt` (modify)
+- `main.cpp` (add backend->setCore(formGPS))
 
-**Testing**: Verify `Backend` object accessible in QML with `import AOG 1.0`
+**Directory Structure**:
+```
+backend/
+├── backend.h          (Backend singleton - UI interface)
+├── backend.cpp
+├── rawgpsdata.h       (Q_GADGET - will be added in Phase 2)
+├── blockagedata.h     (Q_GADGET - will be added in Phase 2)
+└── ...                (All Q_OBJECT and Q_GADGET UI-related code)
+```
+
+**Important**: ALL Q_OBJECT and Q_GADGET code related to QML goes in `backend/` directory. FormGPS and other business logic remain in project root.
+
+**Testing**:
+- Verify `Backend` object accessible in QML with `import AOG 1.0`
+- Test Q_INVOKABLE method call chain: QML → Backend → FormGPS
 
 ### Phase 2: Core Q_GADGET Containers (Week 1-2)
 
@@ -480,15 +616,21 @@ TEST(Backend, GPSDataUpdate) {
 
 **Recommendation**: **Option A** for Phase 1-4, then **Option B** for Phase 5 to minimize risk
 
-### 2. Q_INVOKABLE Write Methods
-**Question**: How should QML write to Q_GADGET members (read-only from QML)?
+### 2. Q_INVOKABLE Methods Implementation Pattern
+**Question**: How should Backend call FormGPS business logic without circular dependencies?
 
 **Options**:
-- **A**: Q_INVOKABLE methods on Backend (`Backend.updateGPSLatitude(45.0)`)
-- **B**: Expose individual writable properties alongside Q_GADGET
-- **C**: QML read-only, all writes via C++ business logic
+- **A**: Signal-based approach (Backend emits signals, FormGPS connects)
+- **B**: QMetaObject::invokeMethod with core pointer (dynamic invocation)
+- **C**: Direct inclusion of formgps.h (creates circular dependency)
 
-**Recommendation**: **Option C** - QML should be read-only display, C++ handles business logic
+**Decision (Michael)**: **Option B** - QMetaObject::invokeMethod is the best approach
+- No circular dependencies
+- Fast compile times (backend.h changes don't trigger FormGPS recompile)
+- Clear Q_INVOKABLE interface contract
+- ~10-50ns overhead is negligible for UI interactions
+
+**Status**: ✅ **RESOLVED** - QMetaObject::invokeMethod pattern documented in "Business Logic Integration Pattern" section
 
 ### 3. CMake Plugin Structure
 **Question**: Should Backend be a separate CMake plugin or integrated into main executable?
@@ -508,6 +650,53 @@ TEST(Backend, GPSDataUpdate) {
 
 **Recommendation**: Start with 6 containers, refine based on usage patterns in Phase 2-3
 
+### 5. Backend Scope and Compile-Time Optimization
+**Question**: How do we prevent Backend from becoming like FormGPS (changing it triggers full project recompile)?
+
+**Michael's Concern**:
+> "My only concern [...] any C++ class that needs to access the Backend singleton needs to include literally everything (much like now with formgps.h), so compile times remain long when any little part of this is changed."
+
+**Mitigation Strategy (Michael)**:
+> "But if we limit Backend and friends to only holding data structures required by the UI, and use a different method for sharing pure C++ state between the classes that can mitigate this problem."
+
+**Guidelines**:
+- ✅ **Backend should contain**: UI-required data (Q_GADGET containers), Q_INVOKABLE UI methods
+- ❌ **Backend should NOT contain**: C++ calculation buffers, internal algorithms, parsing state
+- ✅ **Pure C++ state sharing**: Use existing patterns (FormGPS, CVehicle, CTrack singletons)
+- ✅ **Directory isolation**: backend/ contains only QML interface code
+
+**Example - What Goes Where**:
+
+**✅ Backend (UI Data)**:
+```cpp
+// backend/backend.h - MINIMAL
+class Backend : public QObject {
+    Q_PROPERTY(RawGPSData rawGPS ...)     // UI needs this
+    Q_PROPERTY(FieldData field ...)       // UI needs this
+    Q_INVOKABLE void startField();        // UI action
+};
+```
+
+**✅ FormGPS (C++ Business Logic)**:
+```cpp
+// formgps.h - C++ internals (not in backend/)
+class FormGPS : public QObject {
+    std::vector<Vec3> m_fieldPoints;      // C++ calculation
+    QByteArray m_pgnBuffer;               // Parsing buffer
+    ComplexCalculationEngine m_engine;    // Business logic
+
+    void updatePosition();                // Internal method
+    void calculateGuidance();             // Internal method
+};
+```
+
+**Impact on Compile Time**:
+- Backend.h changes: Only backend/ directory recompiles (~5-10 files)
+- FormGPS.h changes: Most of project recompiles (~50+ files)
+- **Goal**: Keep Backend.h stable and minimal
+
+**Recommendation**: Strictly enforce Backend scope discipline - reject PRs that add C++ internal state to Backend
+
 ---
 
 ## Decision Log
@@ -520,6 +709,28 @@ TEST(Backend, GPSDataUpdate) {
   - Address open questions
   - Create GitHub issue for tracking
   - Schedule implementation timeline
+
+### 2025-12-13: Michael's Approval and Architectural Guidance
+- **Decision**: ✅ **APPROVED**
+- **Key Decisions**:
+  1. **Directory Structure**: Create `backend/` directory for all Q_OBJECT and Q_GADGET QML-related code
+  2. **Business Logic Integration**: Use QMetaObject::invokeMethod pattern (preferred over signals)
+  3. **Backend Scope**: Backend contains ONLY UI data, NOT C++ internal state
+  4. **Compile-Time Mitigation**: Keep Backend.h minimal to avoid formgps.h-style recompile issues
+
+- **Implementation Pattern** (Michael):
+  - Backend has `QObject* core` property pointing to FormGPS
+  - Q_INVOKABLE methods use `QMetaObject::invokeMethod(m_core, "methodName")` for business logic calls
+  - No header inclusion between Backend and FormGPS (no circular dependencies)
+  - FormGPS implements well-documented Q_INVOKABLE methods as the Backend↔Core contract
+
+- **Scope Guidelines** (Michael):
+  - ✅ Backend: UI-required data (Q_GADGET containers), Q_INVOKABLE UI methods
+  - ❌ Backend: C++ calculation buffers, internal algorithms, parsing state
+  - ✅ Pure C++ state: Use existing singleton patterns (FormGPS, CVehicle, CTrack)
+
+- **Status**: Ready for Phase 1 implementation
+- **Next Action**: Begin Phase 1 - Backend Infrastructure (Week 1)
 
 ---
 
