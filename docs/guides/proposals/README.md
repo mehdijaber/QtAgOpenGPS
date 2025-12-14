@@ -29,9 +29,10 @@ This directory contains architectural proposals that are:
 
 | Proposal | Status | Date | Related Issue | Decision Notes |
 |----------|--------|------|---------------|----------------|
-| [backend-qgadget-architecture.md](backend-qgadget-architecture.md) | PENDING | 2025-12-13 | TBD | Backend singleton with Q_GADGET data containers |
+| [architecture-integration-plan.md](architecture-integration-plan.md) | PENDING | 2024-12-14 | TBD | Integration of 3 architectural proposals with validated implementation order |
+| [backend-qgadget-architecture.md](backend-qgadget-architecture.md) | PENDING | 2024-12-13 | TBD | Backend singleton with Q_GADGET data containers |
 | [architecture-refactoring.md](architecture-refactoring.md) | PENDING | 2025-01-05 | TBD | Major FormGPS refactoring |
-| [rendering-architecture.md](rendering-architecture.md) | PENDING | 2025-11-29 | TBD | Scene Graph migration |
+| [rendering-architecture.md](rendering-architecture.md) | PENDING | 2024-11-29 | TBD | Scene Graph migration |
 
 ---
 
@@ -132,4 +133,4 @@ When a proposal is **IMPLEMENTED**, **REJECTED**, or **SUPERSEDED**:
 
 ---
 
-**Last Updated**: 2025-12-13
+**Last Updated**: 2024-12-14
