@@ -174,6 +174,237 @@ private:
 };
 ```
 
+#### 3. Unified C++/QML Singleton Pattern
+
+**Critical Pattern**: Backend (and future CoreGPS) must be accessible from both C++ and QML using a **single shared instance**.
+
+### Problem: Two-Instance Singleton Anti-Pattern
+
+**Without this pattern**, you can accidentally create **two separate instances**:
+
+```cpp
+// ❌ WRONG - Two different instances!
+class Backend : public QObject {
+    static Backend* instance();  // C++ creates one instance
+};
+
+// main.cpp
+qmlRegisterSingletonType<Backend>(..., [](...) {
+    return new Backend();  // QML creates ANOTHER instance!
+});
+
+// Result: C++ sees one Backend, QML sees a different Backend
+// GPS data updated in C++ won't appear in QML!
+```
+
+### Solution: instance() + create() Pattern (Michael)
+
+**Pattern Requirements** (per Michael):
+> "if a Q_OBJECT class is intended to be a QML_SINGLETON, and if it needs to be accessible to c++ code, it should follow the pattern in backend.h. Needs an instance() method for C++, and a create() method for the QML engine. Makes a singleton that is shared between C++ and QML."
+
+**Implementation**:
+
+```cpp
+// backend.h
+class Backend : public QObject
+{
+    Q_OBJECT
+    QML_ELEMENT       // Qt 6 auto-registration
+    QML_SINGLETON     // Tells QML this is a singleton
+
+public:
+    // For C++ - Standard singleton pattern
+    static Backend* instance() {
+        if (!m_instance) {
+            m_instance = new Backend();
+        }
+        return m_instance;
+    }
+
+    // For QML - Called by QML engine during initialization
+    static Backend* create(QQmlEngine* engine, QJSEngine* scriptEngine) {
+        Q_UNUSED(engine)
+        Q_UNUSED(scriptEngine)
+
+        // KEY: Return the SAME instance as C++
+        return instance();
+    }
+
+private:
+    explicit Backend(QObject* parent = nullptr);
+    static Backend* m_instance;
+};
+
+// backend.cpp
+Backend* Backend::m_instance = nullptr;
+
+Backend::Backend(QObject* parent)
+    : QObject(parent)
+{
+    // Singleton initialization
+}
+```
+
+### Benefits
+
+1. **Single Shared Instance**: C++ and QML see exactly the same object
+2. **No Manual Registration**: QML_ELEMENT + QML_SINGLETON = auto-registration (no qmlRegisterSingletonType needed)
+3. **Zero main.cpp Boilerplate**: Qt 6 handles registration automatically
+4. **Type Safety**: QML engine validates singleton at load time
+5. **Guaranteed Initialization**: QML engine calls `create()` once during startup
+
+### Comparison: Old vs New Pattern
+
+#### ❌ Old Pattern (QtAgOpenGPS current state for some classes)
+
+```cpp
+// Singleton without unified pattern
+class FormGPS : public QQmlApplicationEngine {
+    static FormGPS* instance();
+};
+
+// main.cpp - Manual registration required
+qmlRegisterSingletonType<FormGPS>("AOG", 1, 0, "FormGPS",
+    [](QQmlEngine *engine, QJSEngine *jsEngine) -> QObject* {
+        return FormGPS::instance();
+    });
+```
+
+**Problems**:
+- Manual registration code in main.cpp (10+ lines per singleton)
+- Easy to forget registration (runtime errors)
+- No compile-time checks
+- Verbose and error-prone
+
+#### ✅ New Pattern (Michael's approach - SettingsManager, AgIOService, Backend)
+
+```cpp
+// Unified singleton pattern
+class Backend : public QObject {
+    Q_OBJECT
+    QML_ELEMENT
+    QML_SINGLETON
+
+    static Backend* instance();  // C++
+    static Backend* create(QQmlEngine*, QJSEngine*);  // QML
+};
+
+// main.cpp - NOTHING NEEDED!
+// Qt 6 auto-registers via QML_ELEMENT + QML_SINGLETON
+```
+
+**Benefits**:
+- Zero main.cpp code
+- Compile-time checks (QML_ELEMENT validates class)
+- Single source of truth (class definition only)
+- Impossible to forget registration
+
+### Real-World Examples (Already Implemented)
+
+**Michael has already implemented this pattern** in these classes:
+
+**SettingsManager** (already using unified pattern):
+```cpp
+// classes/settingsmanager.h
+class SettingsManager : public QObject
+{
+    Q_OBJECT
+    QML_ELEMENT
+    QML_SINGLETON
+
+public:
+    static SettingsManager* instance();
+    static SettingsManager* create(QQmlEngine*, QJSEngine*);
+};
+
+// QML usage - works automatically
+Text { text: SettingsManager.vehicle_width }
+```
+
+**AgIOService** (already using unified pattern):
+```cpp
+// classes/agioservice.h
+class AgIOService : public QObject
+{
+    Q_OBJECT
+    QML_ELEMENT
+    QML_SINGLETON
+
+public:
+    static AgIOService* instance();
+    static AgIOService* create(QQmlEngine*, QJSEngine*);
+};
+
+// QML usage - works automatically
+Text { text: AgIOService.gpsFixQuality }
+```
+
+### Impact on main.cpp
+
+**Before** (old FormGPS pattern - ~50 lines of registration):
+```cpp
+// main.cpp - LOTS of boilerplate
+qmlRegisterSingletonType<Backend>(...);
+qmlRegisterSingletonType<SettingsManager>(...);
+qmlRegisterSingletonType<AgIOService>(...);
+qmlRegisterSingletonType<CVehicle>(...);
+qmlRegisterSingletonType<CTrack>(...);
+// ... more registrations
+```
+
+**After** (unified pattern - 0 lines):
+```cpp
+// main.cpp - NOTHING!
+// Qt 6 auto-registers all QML_ELEMENT + QML_SINGLETON classes
+```
+
+### Future: CoreGPS Singleton
+
+**Michael's Plan**:
+> "Eventually FormGPS (or if we rename to CoreGPS) will probably want to be such a singleton so that the QML engine can start it for us."
+
+**Proposed CoreGPS** (FormGPS refactored):
+```cpp
+// coregps.h (future)
+class CoreGPS : public QObject  // No longer QQmlApplicationEngine
+{
+    Q_OBJECT
+    QML_ELEMENT
+    QML_SINGLETON
+
+public:
+    static CoreGPS* instance();  // C++ access
+    static CoreGPS* create(QQmlEngine*, QJSEngine*);  // QML auto-start
+
+    // Business logic methods
+    Q_INVOKABLE void startFieldOperation();
+    Q_INVOKABLE void saveField(const QString& name);
+
+private:
+    explicit CoreGPS(QObject* parent = nullptr);
+    static CoreGPS* m_instance;
+};
+```
+
+**Benefits of CoreGPS as unified singleton**:
+- QML engine can initialize CoreGPS automatically
+- No special main.cpp initialization needed
+- Backend can use `setCore(CoreGPS::instance())`
+- Clean separation: CoreGPS = business logic, Backend = UI data
+
+### Implementation Checklist
+
+For any new singleton that needs both C++ and QML access:
+
+- [ ] Add `QML_ELEMENT` macro
+- [ ] Add `QML_SINGLETON` macro
+- [ ] Implement `static T* instance()` for C++
+- [ ] Implement `static T* create(QQmlEngine*, QJSEngine*)` for QML
+- [ ] `create()` must call `instance()` internally
+- [ ] Private constructor
+- [ ] Static `m_instance` member
+- [ ] Remove any `qmlRegisterSingletonType` from main.cpp
+
 ### Proposed Q_GADGET Containers
 
 #### 1. RawGPSData
@@ -731,6 +962,38 @@ class FormGPS : public QObject {
 
 - **Status**: Ready for Phase 1 implementation
 - **Next Action**: Begin Phase 1 - Backend Infrastructure (Week 1)
+
+### 2025-12-14: Unified C++/QML Singleton Pattern Clarification
+- **Source**: Michael Torrie (branches: refactorattempt, dev)
+- **Key Guidance**:
+  > "if a Q_OBJECT class is intended to be a QML_SINGLETON, and if it needs to be accessible to c++ code, it should follow the pattern in backend.h. Needs an instance() method for C++, and a create() method for the QML engine."
+
+- **Pattern Requirements**:
+  1. **instance()** method for C++ singleton access
+  2. **create()** method for QML engine auto-registration
+  3. **Single shared instance** between C++ and QML (create() calls instance())
+  4. **QML_ELEMENT + QML_SINGLETON** macros for auto-registration
+  5. **Zero main.cpp boilerplate** - Qt 6 handles registration
+
+- **Already Implemented** (by Michael):
+  - ✅ SettingsManager: Unified singleton pattern
+  - ✅ AgIOService: Unified singleton pattern
+  - ✅ No more qmlRegisterSingletonType calls needed
+
+- **Future Plan**:
+  - FormGPS → CoreGPS refactoring
+  - CoreGPS will adopt unified singleton pattern
+  - QML engine can auto-start CoreGPS
+
+- **Documentation Added**: Section 2.3 "Unified C++/QML Singleton Pattern" with:
+  - Problem statement (two-instance anti-pattern)
+  - Complete implementation example
+  - Comparison of old vs new patterns
+  - Real-world examples (SettingsManager, AgIOService)
+  - Implementation checklist
+
+- **Status**: Pattern clarified and documented
+- **Impact**: Backend implementation must follow this exact pattern
 
 ---
 
