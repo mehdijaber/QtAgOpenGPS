@@ -1,15 +1,16 @@
 #ifndef CBOUNDARY_H
 #define CBOUNDARY_H
 
-#include "vec2.h"
-#include "vec3.h"
+#include <QObject>
 #include <QVector>
 #include <QVector3D>
 #include <QSharedPointer>
 #include <QOpenGLBuffer>
+
+#include "vec2.h"
+#include "vec3.h"
 #include "cboundarylist.h"
 #include "btnenum.h"
-#include <QObject>
 #include "interfaceproperty.h"
 
 
