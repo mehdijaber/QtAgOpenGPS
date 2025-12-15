@@ -1,15 +1,15 @@
 #ifndef CVEHICLE_H
 #define CVEHICLE_H
 
+#include <QObject>
+#include <QMatrix4x4>
+#include <QOpenGLBuffer>
+
 #include "csection.h"
 #include "vec2.h"
 #include "vec3.h"
 #include "common.h"
-#include <QObject>
-#include <QMatrix4x4>
 #include "interfaceproperty.h"
-
-#include <QOpenGLBuffer>
 
 class QOpenGLFunctions;
 class CCamera;
